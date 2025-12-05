@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人员管理模板 - 茶园管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 { 
+            color: #1976d2; 
+            font-size: 1.8rem; 
+            margin-bottom: 0.5rem; 
+        }
+        
+        .header .subtitle { 
+            color: #666; 
+            font-size: 0.9rem; 
+        }
+        
+        .nav-buttons { 
+            margin-top: 1rem; 
+            display: flex; 
+            gap: 1rem; 
+        }
+        
+        .nav-btn {
+            background: #6c757d; 
+            color: white; 
+            text-decoration: none;
+            padding: 0.5rem 1rem; 
+            border-radius: 5px; 
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-btn:hover { background: #5a6268; }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 0 2rem 4rem; 
+        }
+        
+        /* 表单卡片样式 */
+        .form-card {
+            background: white; 
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden; 
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+            color: white; 
+            padding: 1.5rem 2rem;
+            font-size: 1.3rem; 
+            font-weight: 600;
+        }
+        
+        .card-body { padding: 2rem; }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        
+        .form-group label {
+            display: block; 
+            color: #333; 
+            font-weight: 500; 
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group label .required { 
+            color: #dc3545; 
+            margin-left: 3px; 
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #42a5f5;
+            box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        /* 文件上传区域 */
+        .upload-area {
+            border: 2px dashed #42a5f5;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-area:hover {
+            background: rgba(66, 165, 245, 0.05);
+            border-color: #1e88e5;
+        }
+        
+        .upload-area.dragover {
+            background: rgba(66, 165, 245, 0.1);
+            border-color: #1e88e5;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .avatar-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin: 1rem auto;
+            display: none;
+        }
+        
+        .avatar-preview.active {
+            display: block;
+        }
+        
+        /* 人员列表样式 */
+        .personnel-section {
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            color: #1976d2;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #42a5f5;
+            font-weight: 600;
+        }
+        
+        .personnel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .personnel-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .personnel-card:hover {
+            border-color: #42a5f5;
+            box-shadow: 0 5px 15px rgba(66, 165, 245, 0.2);
+            transform: translateY(-3px);
+        }
+        
+        .personnel-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .personnel-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #42a5f5;
+        }
+        
+        .personnel-avatar-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .personnel-info h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 0.3rem;
+        }
+        
+        .personnel-role {
+            display: inline-block;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .role-recorder {
+            background: #e1f5fe;
+            color: #0277bd;
+        }
+        
+        .role-captain {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .role-master {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+        
+        .personnel-details {
+            margin: 1rem 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .personnel-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .personnel-actions button {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        /* 通知消息 */
+        .message {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        
+        .message.active {
+            display: block;
+        }
+        
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #42a5f5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container { padding: 0 1rem 2rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .personnel-grid { grid-template-columns: 1fr; }
+            .nav-buttons { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>👥 人员管理模板</h1>
+        <p class="subtitle">统一管理记录人、采摘队长、制茶师等人员信息</p>
+        <div class="nav-buttons">
+            <a href="/admin/template-management" class="nav-btn">← 返回模板中心</a>
+            <a href="/dashboard" class="nav-btn">🏠 返回仪表板</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 消息提示 -->
+        <div id="message" class="message"></div>
+
+        <!-- 新增人员表单 -->
+        <div class="form-card">
+            <div class="card-header">➕ 新增人员</div>
+            <div class="card-body">
+                <form id="add-personnel-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">姓名 <span class="required">*</span></label>
+                            <input type="text" id="name" class="form-control" placeholder="请输入人员姓名" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="role">角色 <span class="required">*</span></label>
+                            <select id="role" class="form-control" required>
+                                <option value="">请选择角色</option>
+                                <option value="记录人">记录人</option>
+                                <option value="采摘队长">采摘队长</option>
+                                <option value="制茶师">制茶师</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="experience-group" style="display: none;">
+                            <label for="experience-years">经验年限</label>
+                            <input type="number" id="experience-years" class="form-control" min="0" max="100" step="1" placeholder="请输入经验年限">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="avatar">头像上传</label>
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-icon">📷</div>
+                            <p>点击或拖拽上传头像图片</p>
+                            <p style="font-size: 0.85rem; color: #999; margin-top: 0.5rem;">支持 JPG、PNG、GIF、WebP、AVIF 格式</p>
+                        </div>
+                        <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                        <img id="avatar-preview" class="avatar-preview" alt="头像预览">
+                        <input type="hidden" id="avatar-url">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">✅ 添加人员</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">🔄 重置表单</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 人员列表 -->
+        <div class="form-card">
+            <div class="card-header">📋 人员列表</div>
+            <div class="card-body">
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>加载中...</p>
+                </div>
+
+                <!-- 记录人列表 -->
+                <div class="personnel-section">
+                    <h2 class="section-title">📝 记录人</h2>
+                    <div id="recorders-list" class="personnel-grid"></div>
+                </div>
+
+                <!-- 采摘队长列表 -->
+                <div class="personnel-section">
+                    <h2 class="section-title">👨‍🌾 采摘队长</h2>
+                    <div id="captains-list" class="personnel-grid"></div>
+                </div>
+
+                <!-- 制茶师列表 -->
+                <div class="personnel-section">
+                    <h2 class="section-title">👨‍🍳 制茶师</h2>
+                    <div id="masters-list" class="personnel-grid"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 全局变量
+        let currentEditId = null;
+        let uploadedAvatarUrl = '';
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllPersonnel();
+            setupEventListeners();
+        });
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 表单提交
+            document.getElementById('add-personnel-form').addEventListener('submit', handleFormSubmit);
+
+            // 角色选择变化时显示/隐藏经验年限
+            document.getElementById('role').addEventListener('change', function() {
+                const experienceGroup = document.getElementById('experience-group');
+                if (this.value === '制茶师') {
+                    experienceGroup.style.display = 'block';
+                } else {
+                    experienceGroup.style.display = 'none';
+                    document.getElementById('experience-years').value = '';
+                }
+            });
+
+            // 上传区域点击
+            document.getElementById('upload-area').addEventListener('click', function() {
+                document.getElementById('avatar-input').click();
+            });
+
+            // 文件选择
+            document.getElementById('avatar-input').addEventListener('change', handleFileSelect);
+
+            // 拖拽上传
+            const uploadArea = document.getElementById('upload-area');
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    uploadAvatar(files[0]);
+                }
+            });
+        }
+
+        // 处理文件选择
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadAvatar(file);
+            }
+        }
+
+        // 上传头像
+        async function uploadAvatar(file) {
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                showMessage('请上传图片文件', 'error');
+                return;
+            }
+
+            // 验证文件大小（限制为5MB）
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('图片文件大小不能超过5MB', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadedAvatarUrl = data.data.url;
+                    document.getElementById('avatar-url').value = data.data.url;
+                    
+                    // 显示预览
+                    const preview = document.getElementById('avatar-preview');
+                    preview.src = data.data.url;
+                    preview.classList.add('active');
+                    
+                    showMessage('头像上传成功', 'success');
+                } else {
+                    showMessage('头像上传失败: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('上传头像时发生错误:', error);
+                showMessage('头像上传失败', 'error');
+            }
+        }
+
+        // 处理表单提交
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const role = document.getElementById('role').value;
+            const experienceYears = document.getElementById('experience-years').value || 0;
+            const avatarUrl = document.getElementById('avatar-url').value;
+
+            if (!name || !role) {
+                showMessage('请填写所有必填字段', 'error');
+                return;
+            }
+
+            const personnelData = {
+                name,
+                role,
+                avatar_url: avatarUrl,
+                experience_years: parseInt(experienceYears)
+            };
+
+            try {
+                let url = '/api/personnel';
+                let method = 'POST';
+                let successMessage = '人员添加成功';
+
+                if (currentEditId) {
+                    url = `/api/personnel/${currentEditId}`;
+                    method = 'PUT';
+                    successMessage = '人员信息更新成功';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(personnelData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(successMessage, 'success');
+                    resetForm();
+                    loadAllPersonnel();
+                } else {
+                    showMessage(data.message || '操作失败', 'error');
+                }
+            } catch (error) {
+                console.error('提交表单时发生错误:', error);
+                showMessage('操作失败', 'error');
+            }
+        }
+
+        // 加载所有人员
+        async function loadAllPersonnel() {
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                const response = await fetch('/api/personnel');
+                const data = await response.json();
+
+                if (data.success) {
+                    displayPersonnel(data.data);
+                } else {
+                    showMessage('加载人员列表失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载人员列表时发生错误:', error);
+                showMessage('加载人员列表失败', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // 显示人员列表
+        function displayPersonnel(personnelList) {
+            // 按角色分类
+            const recorders = personnelList.filter(p => p.role === 'RECORDER');
+            const captains = personnelList.filter(p => p.role === 'HARVEST_LEAD');
+            const masters = personnelList.filter(p => p.role === 'TEA_MASTER');
+
+            // 渲染各个列表
+            renderPersonnelList('recorders-list', recorders, 'recorder');
+            renderPersonnelList('captains-list', captains, 'captain');
+            renderPersonnelList('masters-list', masters, 'master');
+        }
+
+        // 渲染人员列表
+        function renderPersonnelList(containerId, personnel, roleClass) {
+            const container = document.getElementById(containerId);
+            
+            if (personnel.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 2rem;">暂无人员</p>';
+                return;
+            }
+
+            container.innerHTML = personnel.map(p => {
+                const role = p.role || '';
+                const roleLabel =
+                    role === 'RECORDER'
+                        ? '📝'
+                        : role === 'HARVEST_LEAD'
+                            ? '👨‍🌾'
+                            : '👨‍🍳';
+                const personId = p.id ?? p._id ?? '';
+                const avatarUrl = p.avatarUrl ?? p.avatar_url ?? '';
+                const experienceYears = p.experienceYears ?? p.experience_years ?? 0;
+                
+                return `
+                    <div class="personnel-card">
+                        <div class="personnel-header">
+                            ${avatarUrl ? 
+                                `<img src="${avatarUrl}" alt="${p.name}" class="personnel-avatar">` :
+                                `<div class="personnel-avatar-placeholder">${p.name.charAt(0)}</div>`
+                            }
+                            <div class="personnel-info">
+                                <h3>${p.name}</h3>
+                                <span class="personnel-role role-${roleClass}">${roleLabel} ${role}</span>
+                            </div>
+                        </div>
+                        <div class="personnel-details">
+                            ${role === 'TEA_MASTER' && experienceYears > 0 ? 
+                                `<p>📅 经验年限: ${experienceYears} 年</p>` : ''}
+                            <p style="font-size: 0.8rem; color: #999; margin-top: 0.5rem;">
+                                创建时间: ${new Date(p.createdAt).toLocaleDateString('zh-CN')}
+                            </p>
+                        </div>
+                        <div class="personnel-actions">
+                            <button class="btn btn-success" onclick="editPersonnel('${personId}')">✏️ 编辑</button>
+                            <button class="btn btn-danger" onclick="deletePersonnel('${personId}', '${p.name}')">🗑️ 删除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 编辑人员
+        async function editPersonnel(id) {
+            try {
+                const response = await fetch('/api/personnel');
+                const data = await response.json();
+
+                if (data.success) {
+                    const personnel = data.data.find(p => (p.id ?? p._id) === id);
+                    if (personnel) {
+                        currentEditId = personnel.id ?? personnel._id;
+                        
+                        // 填充表单
+                        document.getElementById('name').value = personnel.name;
+                        document.getElementById('role').value = personnel.role;
+                        
+                        if (personnel.role === 'TEA_MASTER') {
+                            document.getElementById('experience-group').style.display = 'block';
+                            document.getElementById('experience-years').value =
+                                personnel.experienceYears ?? personnel.experience_years ?? 0;
+                        }
+                        
+                        const existingAvatar = personnel.avatarUrl ?? personnel.avatar_url;
+                        if (existingAvatar) {
+                            document.getElementById('avatar-url').value = existingAvatar;
+                            const preview = document.getElementById('avatar-preview');
+                            preview.src = existingAvatar;
+                            preview.classList.add('active');
+                            uploadedAvatarUrl = existingAvatar;
+                        }
+                        
+                        // 滚动到表单
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        showMessage('正在编辑人员信息，修改后点击"添加人员"按钮保存', 'success');
+                    }
+                }
+            } catch (error) {
+                console.error('加载人员信息时发生错误:', error);
+                showMessage('加载人员信息失败', 'error');
+            }
+        }
+
+        // 删除人员
+        async function deletePersonnel(id, name) {
+            if (!confirm(`确定要删除人员"${name}"吗？此操作不可恢复。`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/personnel/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('人员删除成功', 'success');
+                    loadAllPersonnel();
+                } else {
+                    showMessage(data.message || '删除失败', 'error');
+                }
+            } catch (error) {
+                console.error('删除人员时发生错误:', error);
+                showMessage('删除失败', 'error');
+            }
+        }
+
+        // 重置表单
+        function resetForm() {
+            document.getElementById('add-personnel-form').reset();
+            document.getElementById('avatar-preview').classList.remove('active');
+            document.getElementById('avatar-url').value = '';
+            document.getElementById('experience-group').style.display = 'none';
+            currentEditId = null;
+            uploadedAvatarUrl = '';
+        }
+
+        // 显示消息
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message message-${type} active`;
+            
+            setTimeout(() => {
+                messageEl.classList.remove('active');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+

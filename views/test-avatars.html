@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>头像测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #66bb6a;
+            margin: 10px;
+        }
+        .avatar-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .avatar-item {
+            text-align: center;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖼️ 头像加载测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 直接访问图片测试</h2>
+        <div class="avatar-container">
+            <div class="avatar-item">
+                <img src="/uploads/misc/1759679213193-377974612.png" 
+                     alt="张师傅" 
+                     class="avatar"
+                     onload="console.log('✅ 张师傅头像加载成功')"
+                     onerror="console.error('❌ 张师傅头像加载失败'); this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23666%22%3E错误%3C/text%3E%3C/svg%3E'">
+                <div>张师傅</div>
+            </div>
+            <div class="avatar-item">
+                <img src="/uploads/misc/1759679206625-619413073.png" 
+                     alt="吴师傅" 
+                     class="avatar"
+                     onload="console.log('✅ 吴师傅头像加载成功')"
+                     onerror="console.error('❌ 吴师傅头像加载失败'); this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23666%22%3E错误%3C/text%3E%3C/svg%3E'">
+                <div>吴师傅</div>
+            </div>
+            <div class="avatar-item">
+                <img src="/uploads/misc/1759679949816-925609911.png" 
+                     alt="陈大师" 
+                     class="avatar"
+                     onload="console.log('✅ 陈大师头像加载成功')"
+                     onerror="console.error('❌ 陈大师头像加载失败'); this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23666%22%3E错误%3C/text%3E%3C/svg%3E'">
+                <div>陈大师（制茶师）</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. API 数据测试</h2>
+        <div id="api-results">加载中...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 动态渲染人员卡片</h2>
+        <div id="person-cards"></div>
+    </div>
+
+    <script>
+        // 测试 API 返回数据
+        async function testAPI() {
+            const resultsDiv = document.getElementById('api-results');
+            const cardsDiv = document.getElementById('person-cards');
+            
+            try {
+                // 测试生长日志 API
+                const growthResponse = await fetch('/api/public/growth-data?month=2025-10');
+                const growthData = await growthResponse.json();
+                
+                console.log('生长日志API返回:', growthData);
+                
+                if (growthData.dailyLogs && growthData.dailyLogs.length > 0) {
+                    const firstLog = growthData.dailyLogs[0];
+                    
+                    resultsDiv.innerHTML = `
+                        <h3 class="success">✅ API 数据正常</h3>
+                        <p><strong>第一条日志：</strong></p>
+                        <ul>
+                            <li>日期: ${firstLog.formatted_date}</li>
+                            <li>记录人姓名: ${firstLog.recorder_name}</li>
+                            <li>recorder_id 是否存在: ${firstLog.recorder_id ? '✅ 是' : '❌ 否'}</li>
+                            ${firstLog.recorder_id ? `
+                                <li>recorder_id.name: ${firstLog.recorder_id.name}</li>
+                                <li>recorder_id.avatar_url: ${firstLog.recorder_id.avatar_url}</li>
+                                <li>recorder_id.role: ${firstLog.recorder_id.role}</li>
+                            ` : ''}
+                        </ul>
+                        <pre>${JSON.stringify(firstLog.recorder_id, null, 2)}</pre>
+                    `;
+                    
+                    // 渲染人员卡片
+                    if (firstLog.recorder_id) {
+                        cardsDiv.innerHTML = renderPersonCard(firstLog.recorder_id, firstLog.recorder_name);
+                    }
+                } else {
+                    resultsDiv.innerHTML = '<p class="error">❌ 没有生长日志数据</p>';
+                }
+                
+            } catch (error) {
+                console.error('API 测试失败:', error);
+                resultsDiv.innerHTML = `<p class="error">❌ API 请求失败: ${error.message}</p>`;
+            }
+        }
+        
+        // 人员卡片渲染函数（与 example-public-page.html 相同）
+        function renderPersonCard(personData, defaultName = '未知') {
+            if (personData && typeof personData === 'object' && personData.name) {
+                return `
+                    <div class="person-card" style="display: flex; align-items: center; background: white; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <img 
+                            src="${personData.avatar_url || '/default-avatar.png'}" 
+                            alt="${personData.name}"
+                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-right: 1rem; border: 3px solid #66bb6a;"
+                            onerror="console.error('❌ 头像加载失败:', '${personData.avatar_url}'); this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23666%22%3E?%3C/text%3E%3C/svg%3E'"
+                            onload="console.log('✅ 头像加载成功:', '${personData.avatar_url}')"
+                        >
+                        <div style="flex: 1;">
+                            <div style="font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 0.3rem;">${personData.name}</div>
+                            <div style="color: #666; font-size: 0.9rem;">${personData.role || ''}</div>
+                            ${personData.experience_years ? `<div style="color: #999; font-size: 0.85rem;">经验：${personData.experience_years}年</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="person-card" style="display: flex; align-items: center; background: white; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <img 
+                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23666'%3E?%3C/text%3E%3C/svg%3E" 
+                            alt="${defaultName}"
+                            style="width: 60px; height: 60px; border-radius: 50%; margin-right: 1rem;"
+                        >
+                        <div style="flex: 1;">
+                            <div style="font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 0.3rem;">${defaultName}</div>
+                            <div style="color: #999; font-size: 0.9rem;">暂无详细信息</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // 页面加载时执行测试
+        document.addEventListener('DOMContentLoaded', testAPI);
+    </script>
+</body>
+</html>
+

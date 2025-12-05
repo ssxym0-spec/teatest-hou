@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鉴赏模板管理 - 茶园管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 { 
+            color: #8e24aa; 
+            font-size: 1.8rem; 
+            margin-bottom: 0.5rem; 
+        }
+        
+        .header .subtitle { 
+            color: #666; 
+            font-size: 0.9rem; 
+        }
+        
+        .nav-buttons { 
+            margin-top: 1rem; 
+            display: flex; 
+            gap: 1rem; 
+        }
+        
+        .nav-btn {
+            background: #6c757d; 
+            color: white; 
+            text-decoration: none;
+            padding: 0.5rem 1rem; 
+            border-radius: 5px; 
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-btn:hover { background: #5a6268; }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 0 2rem 4rem; 
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left: 4px solid #ff9800;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            color: #e65100;
+        }
+        
+        .info-box strong {
+            color: #f57c00;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .template-card {
+            background: white; 
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden; 
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #8e24aa 0%, #ba68c8 100%);
+            color: white; 
+            padding: 1.5rem 2rem;
+            font-size: 1.3rem; 
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-body { 
+            padding: 2rem; 
+        }
+        
+        .form-group { 
+            margin-bottom: 1.5rem; 
+        }
+        
+        .form-group label {
+            display: block; 
+            color: #333; 
+            font-weight: 500; 
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .form-control {
+            width: 100%; 
+            padding: 0.75rem; 
+            border: 2px solid #e0e0e0;
+            border-radius: 8px; 
+            font-size: 0.9rem; 
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none; 
+            border-color: #8e24aa;
+            box-shadow: 0 0 0 3px rgba(142, 36, 170, 0.1);
+        }
+        
+        textarea.form-control {
+            min-height: 120px; 
+            resize: vertical; 
+            font-family: inherit;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #8e24aa 0%, #ba68c8 100%);
+            color: white; 
+            border: none; 
+            padding: 0.75rem 2rem;
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 1rem;
+            font-weight: 600; 
+            transition: all 0.3s; 
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(142, 36, 170, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+        }
+        
+        .btn-add {
+            background: linear-gradient(135deg, #42a5f5 0%, #2196f3 100%);
+            margin-bottom: 2rem;
+        }
+        
+        .btn-add:hover {
+            box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
+        }
+        
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .new-template-form {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        
+        .new-template-form h3 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .category-name-input {
+            width: 100%;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>☕ 鉴赏模板管理</h1>
+        <p class="subtitle">设置不同茶叶品类的成品鉴赏默认文案，包括品鉴笔记、冲泡建议和储存方法</p>
+        <div class="nav-buttons">
+            <a href="/dashboard" class="nav-btn">🏠 返回仪表板</a>
+            <a href="/admin/template-management" class="nav-btn">📝 返回模板管理</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="message-container"></div>
+        
+        <div class="info-box">
+            <strong>💡 功能说明</strong>
+            <p>在这里为不同茶叶品类设置成品鉴赏的默认文案。当管理员新增批次或编辑批次时，系统会根据选择的茶叶品类自动填充对应的品鉴笔记、冲泡建议和储存方法，提高工作效率。</p>
+        </div>
+
+        <!-- 新增模板表单 -->
+        <div id="new-template-section" class="new-template-form hidden">
+            <h3>➕ 新增鉴赏模板</h3>
+            <div class="form-group">
+                <label>茶叶品类名称</label>
+                <input type="text" class="form-control category-name-input" id="new-category-name" placeholder="例如：明前茶、雨前茶等">
+            </div>
+            <div class="form-group">
+                <label>品鉴笔记</label>
+                <textarea class="form-control" id="new-tasting-notes" placeholder="描述茶叶的外形、汤色、香气、滋味、叶底等..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>冲泡建议</label>
+                <textarea class="form-control" id="new-brewing-suggestion" placeholder="水温、茶水比例、浸泡时间、冲泡器具等..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>储存方法</label>
+                <textarea class="form-control" id="new-storage-method" placeholder="储存温度、湿度、容器、保质期等..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="createNewTemplate()">✅ 创建模板</button>
+                <button class="btn" onclick="cancelNewTemplate()">❌ 取消</button>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn btn-add" onclick="showNewTemplateForm()">➕ 新增茶叶品类模板</button>
+        </div>
+
+        <div id="loading" class="loading">正在加载模板...</div>
+        
+        <div id="templates-container" class="hidden"></div>
+    </div>
+
+    <script>
+        let allTemplates = [];
+        const DOM_KEY_REGEX = /[^\w-]/g;
+
+        const normalizeTemplate = (template) => ({
+            ...template,
+            categoryName: template.categoryName ?? template.category_name ?? '',
+            tastingNotes: template.tastingNotes ?? template.tasting_notes ?? '',
+            brewingSuggestion: template.brewingSuggestion ?? template.brewing_suggestion ?? '',
+            storageMethod: template.storageMethod ?? template.storage_method ?? '',
+        });
+
+        const getCategoryName = (template) => template?.categoryName ?? template?.category_name ?? '';
+        const getDomKey = (categoryName) =>
+            (categoryName ? categoryName.replace(DOM_KEY_REGEX, '_') : '').trim() || 'category';
+        
+        // 页面加载时获取模板数据
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTemplates();
+        });
+
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/appreciation-templates');
+                const result = await response.json();
+                
+                if (!result.success) {
+                    showMessage('加载模板失败: ' + result.message, 'error');
+                    return;
+                }
+                
+                allTemplates = (result.data || []).map(normalizeTemplate);
+                renderTemplates();
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('templates-container').classList.remove('hidden');
+                
+                if (allTemplates.length > 0) {
+                    showMessage(`✅ 成功加载 ${allTemplates.length} 个鉴赏模板`, 'success');
+                } else {
+                    showMessage('暂无模板，请点击"新增茶叶品类模板"按钮创建', 'info');
+                }
+                
+            } catch (error) {
+                console.error('加载模板时出错:', error);
+                showMessage('加载失败: ' + error.message, 'error');
+            }
+        }
+
+        function renderTemplates() {
+            const container = document.getElementById('templates-container');
+            
+            if (allTemplates.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 2rem;">暂无模板数据</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+
+            allTemplates.forEach((template) => {
+                const categoryName = getCategoryName(template);
+                if (!categoryName) {
+                    console.warn('[Appreciation] 模板缺少 categoryName，已跳过：', template);
+                    return;
+                }
+                const domKey = getDomKey(categoryName);
+                const encodedCategory = encodeURIComponent(categoryName);
+
+                const card = document.createElement('div');
+                card.className = 'template-card';
+                card.dataset.category = encodedCategory;
+                card.dataset.domKey = domKey;
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span>${categoryName}</span>
+                        <div>
+                            <button class="btn btn-success template-save-btn">💾 保存模板</button>
+                            <button class="btn template-delete-btn" style="margin-left: 0.5rem;">🗑️ 删除</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>品鉴笔记</label>
+                            <textarea class="form-control" id="tasting-notes-${domKey}" placeholder="描述茶叶的外形、汤色、香气、滋味、叶底等...">${template.tastingNotes || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>冲泡建议</label>
+                            <textarea class="form-control" id="brewing-suggestion-${domKey}" placeholder="水温、茶水比例、浸泡时间、冲泡器具等...">${template.brewingSuggestion || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>储存方法</label>
+                            <textarea class="form-control" id="storage-method-${domKey}" placeholder="储存温度、湿度、容器、保质期等...">${template.storageMethod || ''}</textarea>
+                        </div>
+                    </div>
+                `;
+
+                const saveBtn = card.querySelector('.template-save-btn');
+                const deleteBtn = card.querySelector('.template-delete-btn');
+
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', () => saveTemplate(categoryName, domKey));
+                }
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', () => deleteTemplate(categoryName));
+                }
+
+                container.appendChild(card);
+            });
+        }
+
+        async function saveTemplate(categoryName, domKey = getDomKey(categoryName)) {
+            try {
+                const tastingField = document.getElementById(`tasting-notes-${domKey}`);
+                const brewingField = document.getElementById(`brewing-suggestion-${domKey}`);
+                const storageField = document.getElementById(`storage-method-${domKey}`);
+
+                if (!tastingField || !brewingField || !storageField) {
+                    showMessage('无法定位对应的表单元素，请刷新后重试', 'error');
+                    return;
+                }
+
+                const tastingNotes = tastingField.value.trim();
+                const brewingSuggestion = brewingField.value.trim();
+                const storageMethod = storageField.value.trim();
+                
+                showMessage(`正在保存 ${categoryName} 模板...`, 'info');
+                
+                const response = await fetch(`/api/appreciation-templates/${encodeURIComponent(categoryName)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tasting_notes: tastingNotes,
+                        brewing_suggestion: brewingSuggestion,
+                        storage_method: storageMethod
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(`✅ ${categoryName} 模板保存成功！`, 'success');
+                } else {
+                    showMessage(`❌ 保存失败: ${result.message}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('保存模板时出错:', error);
+                showMessage(`❌ 保存失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteTemplate(categoryName) {
+            if (!confirm(`确定要删除 "${categoryName}" 模板吗？`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/appreciation-templates/${encodeURIComponent(categoryName)}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showMessage(`✅ ${categoryName} 模板已删除`, 'success');
+                    await loadTemplates();
+                } else {
+                    showMessage(`❌ 删除失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('删除模板时出错:', error);
+                showMessage(`❌ 删除失败: ${error.message}`, 'error');
+            }
+        }
+
+        function showNewTemplateForm() {
+            document.getElementById('new-template-section').classList.remove('hidden');
+            document.getElementById('new-category-name').focus();
+        }
+
+        function cancelNewTemplate() {
+            document.getElementById('new-template-section').classList.add('hidden');
+            document.getElementById('new-category-name').value = '';
+            document.getElementById('new-tasting-notes').value = '';
+            document.getElementById('new-brewing-suggestion').value = '';
+            document.getElementById('new-storage-method').value = '';
+        }
+
+        async function createNewTemplate() {
+            try {
+                const categoryName = document.getElementById('new-category-name').value.trim();
+                const tastingNotes = document.getElementById('new-tasting-notes').value.trim();
+                const brewingSuggestion = document.getElementById('new-brewing-suggestion').value.trim();
+                const storageMethod = document.getElementById('new-storage-method').value.trim();
+                
+                if (!categoryName) {
+                    showMessage('请输入茶叶品类名称', 'error');
+                    return;
+                }
+                
+                // 检查是否已存在
+                if (allTemplates.some((t) => getCategoryName(t) === categoryName)) {
+                    showMessage(`品类 "${categoryName}" 已存在，请直接编辑或使用其他名称`, 'error');
+                    return;
+                }
+                
+                showMessage(`正在创建 ${categoryName} 模板...`, 'info');
+                
+                const response = await fetch(`/api/appreciation-templates/${encodeURIComponent(categoryName)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tasting_notes: tastingNotes,
+                        brewing_suggestion: brewingSuggestion,
+                        storage_method: storageMethod
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(`✅ ${categoryName} 模板创建成功！`, 'success');
+                    cancelNewTemplate();
+                    // 重新加载模板列表
+                    await loadTemplates();
+                } else {
+                    showMessage(`❌ 创建失败: ${result.message}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('创建模板时出错:', error);
+                showMessage(`❌ 创建失败: ${error.message}`, 'error');
+            }
+        }
+
+        function showMessage(text, type = 'info') {
+            const container = document.getElementById('message-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+            messageDiv.style.display = 'block';
+            
+            container.innerHTML = '';
+            container.appendChild(messageDiv);
+            
+            // 3秒后自动隐藏成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
+

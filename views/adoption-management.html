@@ -1,0 +1,3325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云养茶园管理 - 后台管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.5rem;
+            flex: 1;
+            text-align: center;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .save-all-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .save-all-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* 标签页样式 */
+        .tabs {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+        }
+
+        .tab-button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 1.2rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab-button::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #667eea;
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-button.active::after {
+            transform: scaleX(1);
+        }
+
+        .tab-button:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 🎨 卡片网格布局 - 核心样式 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-grid.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        /* 卡片基础样式 */
+        .module-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.3s;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .module-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-header .count-badge {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            max-height: none; /* 默认完全展开 */
+            overflow-y: auto;
+            opacity: 1;
+        }
+
+        .card-body.collapsed {
+            max-height: 0 !important;
+            padding: 0 1.5rem !important;
+            opacity: 0 !important;
+            overflow: hidden !important;
+        }
+
+        .toggle-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+            color: white;
+            display: inline-block;
+        }
+
+        .toggle-icon.collapsed {
+            /* 折叠状态：显示右箭头 ▶ */
+        }
+
+        .toggle-icon:not(.collapsed) {
+            /* 展开状态：显示下箭头 ▼，通过替换内容 */
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #555;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        /* 列表项样式 */
+        .list-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .list-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .list-item:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+        }
+
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            gap: 1rem;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* 媒体预览 */
+        .media-preview {
+            margin-top: 0.75rem;
+            max-width: 200px;
+        }
+
+        .media-preview img,
+        .media-preview video {
+            width: 100%;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-small {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .add-item-btn {
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        /* 嵌套列表样式（用于套餐权益） */
+        .nested-list {
+            margin-top: 1rem;
+        }
+
+        .nested-item {
+            background: #fff;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+            border-left: 4px solid #28a745;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            overflow-y: auto;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 图片上传区域样式 */
+        .image-upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+
+        .image-upload-area:hover {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+
+        .image-upload-area.has-image {
+            border-style: solid;
+            border-color: #2ecc71;
+            padding: 10px;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        /* 核心价值编辑区域样式 */
+        .core-value-editor {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+        }
+
+        .core-value-input-row {
+            display: grid;
+            grid-template-columns: 60px 1fr auto;
+            gap: 10px;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .core-value-input-row input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .core-value-input-row input.icon-input {
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .add-value-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 10px;
+            background: #e8f5e9;
+            border: 1px dashed #4caf50;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #2e7d32;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .add-value-btn:hover {
+            background: #c8e6c9;
+            border-style: solid;
+        }
+
+        /* 图标文本组合输入样式 */
+        .icon-text-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .icon-text-group .icon-selector {
+            flex-shrink: 0;
+            width: 60px;
+        }
+
+        .icon-text-group .icon-selector input {
+            width: 60px;
+            height: 40px;
+            text-align: center;
+            font-size: 24px;
+            padding: 5px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .icon-text-group .icon-selector input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .icon-text-group .text-input {
+            flex: 1;
+        }
+
+        .icon-text-group .text-input textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            resize: vertical;
+        }
+
+        .icon-text-group .text-input textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .icon-suggestions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .icon-suggestions span {
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px 10px;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .icon-suggestions span:hover {
+            background: #667eea;
+            transform: scale(1.1);
+        }
+
+        .icon-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* 套餐比对表格样式 */
+        .comparison-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .comparison-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .comparison-table th {
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .comparison-table th:first-child {
+            width: 80px;
+            text-align: center;
+        }
+
+        .comparison-table th:nth-child(2) {
+            width: 150px;
+            text-align: left;
+        }
+
+        .comparison-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .comparison-table tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        .comparison-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .comparison-table input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .comparison-table .icon-cell {
+            text-align: center;
+        }
+
+        .comparison-table .icon-cell input {
+            text-align: center;
+            font-size: 1.3rem;
+            padding: 0.3rem;
+        }
+
+        .comparison-table .feature-name-cell {
+            font-weight: 500;
+        }
+
+        .comparison-table .action-cell {
+            text-align: center;
+            width: 80px;
+        }
+
+        .comparison-table .btn-delete-feature {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .comparison-table .btn-delete-feature:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+
+        .comparison-empty {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+            font-style: italic;
+        }
+
+        /* 套餐名称标签样式 */
+        .package-name-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .package-name-tag:hover {
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .package-name-tag input {
+            border: none;
+            background: transparent;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #333;
+            min-width: 80px;
+            max-width: 150px;
+            padding: 0;
+        }
+
+        .package-name-tag input:focus {
+            outline: none;
+            border-bottom: 1px solid #667eea;
+        }
+
+        .package-name-tag .btn-delete-package {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .package-name-tag .btn-delete-package:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 1rem;
+        }
+
+        .modal-header h3 {
+            color: #333;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #999;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .close-modal:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        /* 提示消息 */
+        .message {
+            position: fixed;
+            top: 80px;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            display: none;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* 文件上传区域 */
+        .upload-area {
+            border: 2px dashed #ddd;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-area p {
+            color: #666;
+            margin: 0;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+            }
+
+            .tab-buttons {
+                flex-direction: column;
+            }
+
+            .tab-content {
+                padding: 1rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .list-item-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .modal-content {
+                padding: 1rem;
+            }
+
+            .message {
+                right: 1rem;
+                left: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/dashboard" class="back-btn">← 返回仪表盘</a>
+        <h1>🍵 云养茶园管理</h1>
+        <button class="save-all-btn" onclick="saveCurrentPlan()">💾 保存所有更改</button>
+    </header>
+
+    <div class="container">
+        <div id="message" class="message"></div>
+
+        <div class="tabs">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="private">● 私人定制管理</button>
+                <button class="tab-button" data-tab="enterprise">○ 企业定制管理</button>
+                <button class="tab-button" data-tab="b2b">○ B端管理</button>
+            </div>
+
+            <!-- 私人定制管理标签页 -->
+            <div id="private-tab" class="tab-content active">
+                <!-- 第一行：营销标题 + 核心价值 -->
+                <div class="card-grid">
+                    <!-- 营销标题卡片 -->
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>📝 营销标题</h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div class="form-group">
+                                <label>主标题</label>
+                                <input type="text" id="private-title" placeholder="从消费奢侈 到创造私享">
+                            </div>
+                            <div class="form-group">
+                                <label>副标题</label>
+                                <input type="text" id="private-subtitle" placeholder="茶如人 百味皆私享">
+                            </div>
+                            <button class="btn btn-success btn-block" onclick="saveMarketingHeader('private')">💾 保存标题</button>
+                        </div>
+                    </div>
+
+                    <!-- 核心价值卡片 -->
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                💎 核心价值主张
+                                <span class="count-badge" id="private-value-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="private-value-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addValueProposition()">+ 添加价值主张</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二行：客户案例 + 场景应用 -->
+                <div class="card-grid">
+                    <!-- 客户案例卡片 -->
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                👥 客户案例
+                                <span class="count-badge" id="private-cases-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="private-cases-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addCustomerCase('private')">+ 添加客户案例</button>
+                        </div>
+                    </div>
+
+                    <!-- 场景应用卡片 -->
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                🎯 场景化应用
+                                <span class="count-badge" id="private-scenarios-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="private-scenarios-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addScenario('private')">+ 添加应用场景</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第三行：定制套餐（全宽） -->
+                <div class="card-grid full-width">
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                📦 定制套餐
+                                <span class="count-badge" id="private-packages-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="private-packages-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addPackage()">+ 添加套餐</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第四行：领养流程（全宽） -->
+                <div class="card-grid full-width">
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                🔄 领养流程
+                                <span class="count-badge" id="private-process-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="private-process-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addProcessStep('private')">+ 添加流程步骤</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第五行：定制套餐比对管理（全宽） -->
+                <div class="card-grid full-width">
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                📊 定制套餐比对管理
+                                <span class="count-badge" id="private-comparison-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <!-- 套餐名称管理 -->
+                            <div style="background: #f8f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #667eea;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                    <h4 style="margin: 0; color: #333; font-size: 1rem;">
+                                        📝 套餐名称设置
+                                        <span style="font-size: 0.85rem; color: #666; font-weight: normal; margin-left: 0.5rem;">
+                                            (比对表格的列标题)
+                                        </span>
+                                    </h4>
+                                    <button class="btn btn-success btn-small" onclick="saveComparisonData()" title="保存套餐列和比对特性">
+                                        💾 保存比对数据
+                                    </button>
+                                </div>
+                                <div id="package-names-list" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                                    <!-- 套餐名称标签将由JS动态生成 -->
+                                </div>
+                                <button class="btn btn-secondary btn-small" onclick="addPackageName()">+ 添加套餐列</button>
+                            </div>
+
+                            <!-- 比对特性表格 -->
+                            <div class="comparison-table-wrapper" id="comparison-features-container">
+                                <!-- 比对特性表格将由JS动态生成 -->
+                            </div>
+                            <button class="btn btn-primary add-item-btn" onclick="addComparisonFeature()">+ 新增比对特性</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 企业定制管理标签页 -->
+            <div id="enterprise-tab" class="tab-content">
+                <!-- 第一行：营销标题 + 客户案例 -->
+                <div class="card-grid">
+                    <!-- 营销标题卡片 -->
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>📝 营销标题</h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div class="form-group">
+                                <label>主标题</label>
+                                <input type="text" id="enterprise-title" placeholder="当别人还在送烟酒 您已经在送山头">
+                            </div>
+                            <div class="form-group">
+                                <label>副标题</label>
+                                <input type="text" id="enterprise-subtitle" placeholder="在您的社交名片上 除了头衔 还有一座茶园">
+                            </div>
+                            <button class="btn btn-success btn-block" onclick="saveMarketingHeader('enterprise')">💾 保存标题</button>
+                        </div>
+                    </div>
+
+                    <!-- 客户案例卡片 -->
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                👥 客户案例
+                                <span class="count-badge" id="enterprise-cases-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="enterprise-cases-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addCustomerCase('enterprise')">+ 添加客户案例</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二行：使用场景 + 服务内容 -->
+                <div class="card-grid">
+                    <!-- 使用场景卡片 -->
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                🎯 使用场景
+                                <span class="count-badge" id="enterprise-scenarios-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="enterprise-scenarios-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addScenario('enterprise')">+ 添加使用场景</button>
+                        </div>
+                    </div>
+
+                    <!-- 服务内容卡片 -->
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                ⚙️ 服务内容
+                                <span class="count-badge" id="enterprise-services-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="enterprise-services-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addServiceContent()">+ 添加服务内容</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第三行：合作流程（全宽） -->
+                <div class="card-grid full-width">
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>
+                                🔄 合作流程
+                                <span class="count-badge" id="enterprise-process-count">0</span>
+                            </h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div id="enterprise-process-list" class="list-items"></div>
+                            <button class="btn btn-primary add-item-btn" onclick="addProcessStep('enterprise')">+ 添加流程步骤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- B端管理标签页 -->
+            <div id="b2b-tab" class="tab-content">
+                <div class="card-grid full-width">
+                    <div class="module-card">
+                        <div class="card-header" onclick="toggleCard(this)">
+                            <h3>📄 B端合作简介</h3>
+                            <span class="toggle-icon collapsed">▶</span>
+                        </div>
+                        <div class="card-body collapsed">
+                            <div class="form-group">
+                                <label>简介内容</label>
+                                <textarea id="b2b-description" rows="8" placeholder="输入B端合作的简介内容..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用编辑模态框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">编辑</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn btn-success" style="flex: 1;" onclick="saveModalData()">保存</button>
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局数据存储
+        let privateData = null;
+        let enterpriseData = null;
+        let b2bData = null;
+        let currentTab = 'private';
+        let modalCallback = null;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupTabSwitching();
+            loadAllPlans();
+        });
+
+        // ========== 卡片折叠/展开功能 ==========
+        function toggleCard(header) {
+            const cardBody = header.nextElementSibling;
+            const icon = header.querySelector('.toggle-icon');
+            
+            if (cardBody && cardBody.classList.contains('card-body')) {
+                cardBody.classList.toggle('collapsed');
+                icon.classList.toggle('collapsed');
+                
+                // 切换图标显示
+                if (icon.classList.contains('collapsed')) {
+                    icon.textContent = '▶'; // 折叠状态：右箭头
+                } else {
+                    icon.textContent = '▼'; // 展开状态：下箭头
+                }
+            }
+        }
+
+        // 设置标签页切换
+        function setupTabSwitching() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        // 切换标签页
+        function switchTab(tabName) {
+            if (!tabName) {
+                console.warn('switchTab: tabName is undefined or null');
+                return;
+            }
+            
+            // 更新按钮状态
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                btn.textContent = btn.textContent.replace('●', '○');
+            });
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.textContent = activeBtn.textContent.replace('○', '●');
+            } else {
+                console.warn(`switchTab: 未找到 data-tab="${tabName}" 的按钮`);
+            }
+            
+            // 更新内容区域
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const tabContent = document.getElementById(`${tabName}-tab`);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            } else {
+                console.warn(`switchTab: 未找到 id="${tabName}-tab" 的内容区域`);
+            }
+            
+            currentTab = tabName;
+        }
+
+        // 更新数量徽章
+        function updateCountBadge(id, count) {
+            const badge = document.getElementById(id);
+            if (badge) {
+                badge.textContent = count;
+            }
+        }
+
+        // 加载所有方案数据
+        async function loadAllPlans() {
+            try {
+                await Promise.all([
+                    loadPlan('private'),
+                    loadPlan('enterprise'),
+                    loadPlan('b2b')
+                ]);
+                showMessage('✓ 数据加载成功', 'success');
+            } catch (error) {
+                showMessage('✗ 数据加载失败: ' + error.message, 'error');
+            }
+        }
+
+        // 规范化数据，确保所有数组字段都被初始化（兼容 camelCase 和 snake_case）
+        function normalizeAdoptionPlanData(data, type) {
+            if (!data) return {};
+            
+            // 兼容字段名：后端可能返回 camelCase，前端使用 snake_case
+            const normalized = { ...data };
+            
+            if (type === 'private') {
+                // 兼容 valuePropositions/value_propositions
+                normalized.value_propositions = normalized.valuePropositions || normalized.value_propositions || [];
+                // 兼容 customerCases/customer_cases
+                normalized.customer_cases = normalized.customerCases || normalized.customer_cases || [];
+                // 兼容 scenarioApplications/scenario_applications
+                normalized.scenario_applications = normalized.scenarioApplications || normalized.scenario_applications || [];
+                // 兼容 packages（已经是数组）
+                normalized.packages = normalized.packages || [];
+                // 兼容 comparisonPackageNames/comparison_package_names
+                // 注意：需要处理 null 和 undefined 的情况
+                if (normalized.comparisonPackageNames !== undefined && normalized.comparisonPackageNames !== null) {
+                    normalized.comparison_package_names = Array.isArray(normalized.comparisonPackageNames) 
+                        ? normalized.comparisonPackageNames 
+                        : [];
+                } else if (normalized.comparison_package_names !== undefined && normalized.comparison_package_names !== null) {
+                    normalized.comparison_package_names = Array.isArray(normalized.comparison_package_names) 
+                        ? normalized.comparison_package_names 
+                        : [];
+                } else {
+                    normalized.comparison_package_names = [];
+                }
+                // 兼容 comparisonFeatures/comparison_features
+                // 注意：需要处理 null 和 undefined 的情况
+                if (normalized.comparisonFeatures !== undefined && normalized.comparisonFeatures !== null) {
+                    normalized.comparison_features = Array.isArray(normalized.comparisonFeatures) 
+                        ? normalized.comparisonFeatures 
+                        : [];
+                } else if (normalized.comparison_features !== undefined && normalized.comparison_features !== null) {
+                    normalized.comparison_features = Array.isArray(normalized.comparison_features) 
+                        ? normalized.comparison_features 
+                        : [];
+                } else {
+                    normalized.comparison_features = [];
+                }
+                // 兼容 processSteps/process_steps
+                normalized.process_steps = normalized.processSteps || normalized.process_steps || [];
+                // 兼容 marketingHeader/marketing_header
+                if (normalized.marketingHeader && !normalized.marketing_header) {
+                    normalized.marketing_header = normalized.marketingHeader;
+                } else if (!normalized.marketing_header) {
+                    normalized.marketing_header = { title: '', subtitle: '', description: '' };
+                }
+            } else if (type === 'enterprise') {
+                // 兼容 customerCases/customer_cases
+                normalized.customer_cases = normalized.customerCases || normalized.customer_cases || [];
+                // 兼容 useScenarios/use_scenarios
+                normalized.use_scenarios = normalized.useScenarios || normalized.use_scenarios || [];
+                // 兼容 serviceContents/service_contents
+                normalized.service_contents = normalized.serviceContents || normalized.service_contents || [];
+                // 兼容 processSteps/process_steps
+                normalized.process_steps = normalized.processSteps || normalized.process_steps || [];
+                // 兼容 marketingHeader/marketing_header
+                if (normalized.marketingHeader && !normalized.marketing_header) {
+                    normalized.marketing_header = normalized.marketingHeader;
+                } else if (!normalized.marketing_header) {
+                    normalized.marketing_header = { title: '', subtitle: '', description: '' };
+                }
+            }
+            
+            return normalized;
+        }
+
+        // 加载单个方案
+        async function loadPlan(type) {
+            try {
+                const response = await fetch(`/api/adoption-plans/${type}`, {
+                    credentials: 'include'
+                });
+                if (!response.ok) throw new Error('加载失败');
+                
+                const result = await response.json();
+                const rawData = result.data || result;
+                
+                // 规范化数据，确保所有数组字段都被初始化
+                const data = normalizeAdoptionPlanData(rawData, type);
+                
+                if (type === 'private') {
+                    privateData = data;
+                    console.log('✅ 已加载私人定制方案数据，所有数组字段已初始化');
+                    console.log('📊 comparison_package_names:', data.comparison_package_names);
+                    console.log('📊 comparison_features:', data.comparison_features);
+                    console.log('📊 comparison_package_names 长度:', data.comparison_package_names?.length || 0);
+                    console.log('📊 comparison_features 长度:', data.comparison_features?.length || 0);
+                    renderPrivatePlan(data);
+                } else if (type === 'enterprise') {
+                    enterpriseData = data;
+                    console.log('✅ 已加载企业定制方案数据，所有数组字段已初始化');
+                    renderEnterprisePlan(data);
+                } else if (type === 'b2b') {
+                    b2bData = data;
+                    console.log('✅ 已加载B2B方案数据');
+                    renderB2BPlan(data);
+                }
+            } catch (error) {
+                console.error(`加载${type}方案失败:`, error);
+                showMessage(`✗ 加载${type}方案失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 渲染私人定制方案
+        function renderPrivatePlan(data) {
+            // 营销标题
+            document.getElementById('private-title').value = data.marketing_header?.title || '';
+            document.getElementById('private-subtitle').value = data.marketing_header?.subtitle || '';
+
+            // 核心价值主张
+            updateCountBadge('private-value-count', data.value_propositions?.length || 0);
+            renderList('private-value-list', data.value_propositions || [], (item, index) => `
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <span class="list-item-title">${item.icon} ${item.title}</span>
+                        <div class="list-item-actions">
+                            <button class="btn btn-primary btn-small" onclick="editValueProposition(${index})">编辑</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteValueProposition(${index})">删除</button>
+                        </div>
+                    </div>
+                    <div>${item.description}</div>
+                </div>
+            `);
+
+            // 客户案例
+            updateCountBadge('private-cases-count', data.customer_cases?.length || 0);
+            renderList('private-cases-list', data.customer_cases || [], (item, index) => {
+                const mediaPreview = item.image_url ? (
+                    item.media_type === 'video' 
+                    ? `<div class="media-preview"><video src="${item.image_url}" controls></video></div>`
+                    : `<div class="media-preview"><img src="${item.image_url}" alt="案例图片"></div>`
+                ) : '';
+                
+                return `
+                    <div class="list-item">
+                        <div class="list-item-header">
+                            <span class="list-item-title">案例 ${index + 1}</span>
+                            <div class="list-item-actions">
+                                <button class="btn btn-primary btn-small" onclick="editCustomerCase('private', ${index})">编辑</button>
+                                <button class="btn btn-danger btn-small" onclick="deleteCustomerCase('private', ${index})">删除</button>
+                            </div>
+                        </div>
+                        <div>${item.text}</div>
+                        ${mediaPreview}
+                    </div>
+                `;
+            });
+
+            // 场景化应用
+            updateCountBadge('private-scenarios-count', data.scenario_applications?.length || 0);
+            renderList('private-scenarios-list', data.scenario_applications || [], (item, index) => `
+                <div class="list-item" style="border-left: 4px solid #3498db;">
+                    <div class="list-item-header">
+                        <span class="list-item-title">
+                            ${item.icon ? `<span style="font-size: 20px; margin-right: 8px;">${item.icon}</span>` : ''}
+                            ${item.title || '未命名场景'}
+                        </span>
+                        <div class="list-item-actions">
+                            <button class="btn btn-primary btn-small" onclick="editScenario('private', ${index})">编辑</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteScenario('private', ${index})">删除</button>
+                        </div>
+                    </div>
+                    ${item.background_image ? `
+                        <div style="margin: 10px 0;">
+                            <img src="${item.background_image}" style="max-width: 100%; max-height: 120px; object-fit: cover; border-radius: 4px;" alt="背景图">
+                        </div>
+                    ` : ''}
+                    ${item.pain_point ? `
+                        <div style="margin: 8px 0; padding: 6px 10px; background: #fff3cd; border-radius: 4px; font-size: 14px;">
+                            <strong style="color: #856404;">💭 痛点:</strong> ${item.pain_point}
+                        </div>
+                    ` : ''}
+                    ${item.solution ? `
+                        <div style="margin: 8px 0; padding: 6px 10px; background: #d1ecf1; border-radius: 4px; font-size: 14px;">
+                            <strong style="color: #0c5460;">💡 方案:</strong> ${item.solution}
+                        </div>
+                    ` : ''}
+                    ${item.core_values && item.core_values.length > 0 ? `
+                        <div style="margin: 10px 0;">
+                            <strong style="color: #2ecc71; font-size: 14px;">✨ 核心价值:</strong>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                                ${item.core_values.map(cv => `
+                                    <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 13px;">
+                                        ${cv.icon} ${cv.title}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `);
+
+            // 定制套餐
+            console.log('🔍 开始渲染定制套餐，数据:', data.packages);
+            console.log('🔍 套餐数量:', data.packages?.length || 0);
+            const packages = data.packages || [];
+            updateCountBadge('private-packages-count', packages.length);
+            
+            const packagesContainer = document.getElementById('private-packages-list');
+            if (!packagesContainer) {
+                console.error('❌ private-packages-list 容器不存在！');
+                return;
+            }
+            
+            if (packages.length === 0) {
+                packagesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>暂无数据，点击下方按钮添加</div>
+                    </div>
+                `;
+                console.log('⚠️ 套餐列表为空，显示空状态');
+            } else {
+                packagesContainer.innerHTML = packages.map((item, index) => `
+                    <div class="list-item">
+                        <div class="list-item-header">
+                            <span class="list-item-title">${item.name || '未命名'} - ${item.price || '未设置价格'}</span>
+                            <div class="list-item-actions">
+                                <button class="btn btn-primary btn-small" onclick="editPackage(${index})">编辑</button>
+                                <button class="btn btn-danger btn-small" onclick="deletePackage(${index})">删除</button>
+                            </div>
+                        </div>
+                        <div><strong>面向客群:</strong> ${item.target_audience || '未设置'}</div>
+                        <div><strong>地块特色:</strong> ${item.area_features || '未设置'}</div>
+                        <div><strong>专属产出:</strong> ${item.exclusive_output || item.tagline || '未设置'}</div>
+                        <div style="margin-top: 0.5rem;">
+                            <strong>核心权益 (${item.rights?.length || 0}项):</strong>
+                            ${(item.rights || []).map(r => `<div>• ${r.icon ? r.icon + ' ' : ''}${r.title || '未命名权益'}</div>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
+                console.log('✅ 定制套餐表格已渲染，共', packages.length, '个套餐');
+            }
+
+            // 领养流程
+            updateCountBadge('private-process-count', data.process_steps?.length || 0);
+            renderList('private-process-list', data.process_steps || [], (item, index) => `
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <span class="list-item-title">步骤 ${item.step}: ${item.title}</span>
+                        <div class="list-item-actions">
+                            <button class="btn btn-primary btn-small" onclick="editProcessStep('private', ${index})">编辑</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteProcessStep('private', ${index})">删除</button>
+                        </div>
+                    </div>
+                    <div>${item.description?.substring(0, 100)}...</div>
+                </div>
+            `);
+
+            // 定制套餐比对
+            renderPackageNames();
+            renderComparisonFeatures();
+        }
+
+        // 渲染企业领养方案
+        function renderEnterprisePlan(data) {
+            document.getElementById('enterprise-title').value = data.marketing_header?.title || '';
+            document.getElementById('enterprise-subtitle').value = data.marketing_header?.subtitle || '';
+
+            // 客户案例展示
+            updateCountBadge('enterprise-cases-count', data.customer_cases?.length || 0);
+            renderList('enterprise-cases-list', data.customer_cases || [], (item, index) => {
+                const mediaPreview = item.image_url ? (
+                    item.media_type === 'video' 
+                    ? `<div class="media-preview"><video src="${item.image_url}" controls></video></div>`
+                    : `<div class="media-preview"><img src="${item.image_url}" alt="案例图片"></div>`
+                ) : '';
+                
+                return `
+                    <div class="list-item">
+                        <div class="list-item-header">
+                            <span class="list-item-title">案例展示 ${index + 1}</span>
+                            <div class="list-item-actions">
+                                <button class="btn btn-primary btn-small" onclick="editCustomerCase('enterprise', ${index})">编辑</button>
+                                <button class="btn btn-danger btn-small" onclick="deleteCustomerCase('enterprise', ${index})">删除</button>
+                            </div>
+                        </div>
+                        <div>${item.text}</div>
+                        ${mediaPreview}
+                    </div>
+                `;
+            });
+
+            // 使用场景
+            updateCountBadge('enterprise-scenarios-count', data.use_scenarios?.length || 0);
+            renderList('enterprise-scenarios-list', data.use_scenarios || [], (item, index) => `
+                <div class="list-item" style="border-left: 4px solid #9b59b6;">
+                    <div class="list-item-header">
+                        <span class="list-item-title">
+                            ${item.icon ? `<span style="font-size: 20px; margin-right: 8px;">${item.icon}</span>` : ''}
+                            ${item.title || '未命名场景'}
+                        </span>
+                        <div class="list-item-actions">
+                            <button class="btn btn-primary btn-small" onclick="editScenario('enterprise', ${index})">编辑</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteScenario('enterprise', ${index})">删除</button>
+                        </div>
+                    </div>
+                    ${item.background_image ? `
+                        <div style="margin: 10px 0;">
+                            <img src="${item.background_image}" style="max-width: 100%; max-height: 120px; object-fit: cover; border-radius: 4px;" alt="背景图">
+                        </div>
+                    ` : ''}
+                    ${item.pain_point ? `
+                        <div style="margin: 8px 0; padding: 6px 10px; background: #fff3cd; border-radius: 4px; font-size: 14px;">
+                            <strong style="color: #856404;">💭 痛点:</strong> ${item.pain_point}
+                        </div>
+                    ` : ''}
+                    ${item.solution ? `
+                        <div style="margin: 8px 0; padding: 6px 10px; background: #d1ecf1; border-radius: 4px; font-size: 14px;">
+                            <strong style="color: #0c5460;">💡 方案:</strong> ${item.solution}
+                        </div>
+                    ` : ''}
+                    ${item.core_values && item.core_values.length > 0 ? `
+                        <div style="margin: 10px 0;">
+                            <strong style="color: #9b59b6; font-size: 14px;">✨ 核心价值:</strong>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                                ${item.core_values.map(cv => `
+                                    <span style="background: #e8daef; color: #5b2c6f; padding: 4px 10px; border-radius: 12px; font-size: 13px;">
+                                        ${cv.icon} ${cv.title}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `);
+
+            // 服务内容
+            updateCountBadge('enterprise-services-count', data.service_contents?.length || 0);
+            renderList('enterprise-services-list', data.service_contents || [], (item, index) => `
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <span class="list-item-title">${item.icon} ${item.title}</span>
+                        <div class="list-item-actions">
+                            <button class="btn btn-primary btn-small" onclick="editServiceContent(${index})">编辑</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteServiceContent(${index})">删除</button>
+                        </div>
+                    </div>
+                    <div>${item.description}</div>
+                </div>
+            `);
+
+            // 合作流程
+            updateCountBadge('enterprise-process-count', data.process_steps?.length || 0);
+            renderList('enterprise-process-list', data.process_steps || [], (item, index) => `
+                <div class="list-item">
+                    <div class="list-item-header">
+                        <span class="list-item-title">步骤 ${item.step}: ${item.title}</span>
+                        <div class="list-item-actions">
+                            <button class="btn btn-primary btn-small" onclick="editProcessStep('enterprise', ${index})">编辑</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteProcessStep('enterprise', ${index})">删除</button>
+                        </div>
+                    </div>
+                    <div>${item.description?.substring(0, 100)}...</div>
+                </div>
+            `);
+        }
+
+        // 渲染B端方案
+        function renderB2BPlan(data) {
+            document.getElementById('b2b-description').value = data.description || '';
+        }
+
+        // 通用列表渲染函数
+        function renderList(containerId, items, renderItem) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>暂无数据，点击下方按钮添加</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = items.map(renderItem).join('');
+            }
+        }
+
+        // ========== 营销标题单独保存 ==========
+        async function saveMarketingHeader(type) {
+            try {
+                // 检查数据对象是否存在
+                if (!privateData && type === 'private') {
+                    throw new Error('数据未初始化，请刷新页面重试');
+                }
+                if (!enterpriseData && type === 'enterprise') {
+                    throw new Error('数据未初始化，请刷新页面重试');
+                }
+                
+                const data = type === 'private' ? privateData : enterpriseData;
+                const titleFieldElement = document.getElementById(`${type}-title`);
+                const subtitleFieldElement = document.getElementById(`${type}-subtitle`);
+                
+                // 检查元素是否存在
+                if (!titleFieldElement || !subtitleFieldElement) {
+                    throw new Error('表单元素不存在，请刷新页面重试');
+                }
+                
+                const titleField = titleFieldElement.value;
+                const subtitleField = subtitleFieldElement.value;
+                
+                data.marketing_header = {
+                    title: titleField,
+                    subtitle: subtitleField
+                };
+
+                const response = await fetch(`/api/adoption-plans/${type}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                    credentials: 'include'
+                });
+
+                // 检查响应状态，必须等待真正的 200 OK
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage = '保存失败';
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMessage = errorJson.message || errorJson.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = `HTTP ${response.status}: ${errorText || '保存失败'}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                // 等待响应解析完成，确保数据已保存
+                const result = await response.json();
+                if (!result.success && result.success !== undefined) {
+                    throw new Error(result.message || '保存失败');
+                }
+                
+                // 只有在真正保存成功后才显示成功消息
+                showMessage('✓ 营销标题保存成功！', 'success');
+                await loadPlan(type);
+            } catch (error) {
+                console.error('保存营销标题失败:', error);
+                showMessage('✗ 保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // ========== 核心价值主张管理 ==========
+        function addValueProposition() {
+            openModal('添加价值主张', `
+                <div class="form-group">
+                    <label>图标 (emoji)</label>
+                    <input type="text" id="modal-icon" placeholder="如: 👑">
+                </div>
+                <div class="form-group">
+                    <label>标题</label>
+                    <input type="text" id="modal-title-field" placeholder="标题">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="modal-description" rows="3" placeholder="描述内容"></textarea>
+                </div>
+            `, async () => {
+                const newItem = {
+                    icon: document.getElementById('modal-icon').value,
+                    title: document.getElementById('modal-title-field').value,
+                    description: document.getElementById('modal-description').value
+                };
+                // 确保数组已初始化
+                if (!privateData.value_propositions) {
+                    privateData.value_propositions = [];
+                }
+                privateData.value_propositions.push(newItem);
+                renderPrivatePlan(privateData);
+                closeModal();
+                await autoSavePlan('private');
+            });
+        }
+
+        function editValueProposition(index) {
+            // 确保数组已初始化
+            if (!privateData.value_propositions) {
+                privateData.value_propositions = [];
+            }
+            const item = privateData.value_propositions[index];
+            if (!item) {
+                showMessage('✗ 未找到要编辑的价值主张', 'error');
+                return;
+            }
+            openModal('编辑价值主张', `
+                <div class="form-group">
+                    <label>图标 (emoji)</label>
+                    <input type="text" id="modal-icon" value="${item.icon || ''}" placeholder="如: 👑">
+                </div>
+                <div class="form-group">
+                    <label>标题</label>
+                    <input type="text" id="modal-title-field" value="${item.title || ''}" placeholder="标题">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="modal-description" rows="3" placeholder="描述内容">${item.description || ''}</textarea>
+                </div>
+            `, async () => {
+                privateData.value_propositions[index] = {
+                    icon: document.getElementById('modal-icon').value,
+                    title: document.getElementById('modal-title-field').value,
+                    description: document.getElementById('modal-description').value
+                };
+                renderPrivatePlan(privateData);
+                closeModal();
+                await autoSavePlan('private');
+            });
+        }
+
+        async function deleteValueProposition(index) {
+            if (confirm('确定要删除这个价值主张吗？')) {
+                privateData.value_propositions.splice(index, 1);
+                renderPrivatePlan(privateData);
+                await autoSavePlan('private');
+            }
+        }
+
+        // ========== 客户案例管理（支持图片/视频上传）==========
+        function addCustomerCase(type) {
+            openModal('添加客户案例', `
+                <div class="form-group">
+                    <label>案例文案</label>
+                    <textarea id="modal-text" rows="3" placeholder="案例描述"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>上传图片/视频</label>
+                    <div class="upload-area" onclick="document.getElementById('modal-file-input').click()">
+                        <p>📤 点击上传图片或视频</p>
+                        <input type="file" id="modal-file-input" accept="image/*,video/*">
+                    </div>
+                    <div id="upload-preview" style="margin-top: 1rem;"></div>
+                </div>
+            `, async () => {
+                const text = document.getElementById('modal-text').value;
+                const fileInput = document.getElementById('modal-file-input');
+                let image_url = '';
+                let media_type = 'image';
+                
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    media_type = file.type.startsWith('video') ? 'video' : 'image';
+                    
+                    const formData = new FormData();
+                    formData.append('media', file);
+                    formData.append('category', 'misc');
+                    
+                    try {
+                        const response = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData,
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            image_url = result.url || result.fileUrl;
+                        } else {
+                            const error = await response.json();
+                            showMessage('✗ 文件上传失败: ' + (error.message || '未知错误'), 'error');
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('上传失败:', error);
+                        showMessage('✗ 文件上传失败: ' + error.message, 'error');
+                        return;
+                    }
+                }
+                
+                const newItem = { text, image_url, media_type };
+                const data = type === 'private' ? privateData : enterpriseData;
+                // 确保数组已初始化
+                if (!data.customer_cases) {
+                    data.customer_cases = [];
+                }
+                data.customer_cases.push(newItem);
+                type === 'private' ? renderPrivatePlan(privateData) : renderEnterprisePlan(enterpriseData);
+                closeModal();
+                await autoSavePlan(type);
+            });
+
+            // 文件选择预览
+            setTimeout(() => {
+                const fileInput = document.getElementById('modal-file-input');
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const preview = document.getElementById('upload-preview');
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            if (file.type.startsWith('video')) {
+                                preview.innerHTML = `<video src="${e.target.result}" controls style="max-width: 100%; border-radius: 8px;"></video>`;
+                            } else {
+                                preview.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; border-radius: 8px;">`;
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }, 100);
+        }
+
+        function editCustomerCase(type, index) {
+            const data = type === 'private' ? privateData : enterpriseData;
+            const item = data.customer_cases[index];
+            
+            const currentPreview = item.image_url ? (
+                item.media_type === 'video'
+                ? `<video src="${item.image_url}" controls style="max-width: 100%; border-radius: 8px;"></video>`
+                : `<img src="${item.image_url}" style="max-width: 100%; border-radius: 8px;">`
+            ) : '';
+            
+            openModal('编辑客户案例', `
+                <div class="form-group">
+                    <label>案例文案</label>
+                    <textarea id="modal-text" rows="3" placeholder="案例描述">${item.text || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>当前媒体</label>
+                    <div id="current-preview">${currentPreview || '无'}</div>
+                </div>
+                <div class="form-group">
+                    <label>替换图片/视频 (可选)</label>
+                    <div class="upload-area" onclick="document.getElementById('modal-file-input').click()">
+                        <p>📤 点击上传新的图片或视频</p>
+                        <input type="file" id="modal-file-input" accept="image/*,video/*">
+                    </div>
+                    <div id="upload-preview" style="margin-top: 1rem;"></div>
+                </div>
+            `, async () => {
+                const text = document.getElementById('modal-text').value;
+                const fileInput = document.getElementById('modal-file-input');
+                let image_url = item.image_url;
+                let media_type = item.media_type;
+                
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    media_type = file.type.startsWith('video') ? 'video' : 'image';
+                    
+                    const formData = new FormData();
+                    formData.append('media', file);
+                    formData.append('category', 'misc');
+                    
+                    try {
+                        const response = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData,
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            image_url = result.url || result.fileUrl;
+                        } else {
+                            const error = await response.json();
+                            showMessage('✗ 文件上传失败: ' + (error.message || '未知错误'), 'error');
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('上传失败:', error);
+                        showMessage('✗ 文件上传失败: ' + error.message, 'error');
+                        return;
+                    }
+                }
+                
+                data.customer_cases[index] = { text, image_url, media_type };
+                type === 'private' ? renderPrivatePlan(privateData) : renderEnterprisePlan(enterpriseData);
+                closeModal();
+                await autoSavePlan(type);
+            });
+
+            // 文件选择预览
+            setTimeout(() => {
+                const fileInput = document.getElementById('modal-file-input');
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const preview = document.getElementById('upload-preview');
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            if (file.type.startsWith('video')) {
+                                preview.innerHTML = `<video src="${e.target.result}" controls style="max-width: 100%; border-radius: 8px;"></video>`;
+                            } else {
+                                preview.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; border-radius: 8px;">`;
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }, 100);
+        }
+
+        async function deleteCustomerCase(type, index) {
+            if (confirm('确定要删除这个客户案例吗？')) {
+                const data = type === 'private' ? privateData : enterpriseData;
+                data.customer_cases.splice(index, 1);
+                type === 'private' ? renderPrivatePlan(privateData) : renderEnterprisePlan(enterpriseData);
+                await autoSavePlan(type);
+            }
+        }
+
+        // ========== 场景化应用/使用场景管理 ==========
+        let tempCoreValues = [];
+        let tempImageData = null; // 临时存储图片数据
+
+        // ========== 图标文本辅助函数 ==========
+        /**
+         * 从带图标的文本中分离图标和纯文本
+         * @param {string} text - 可能包含图标的文本
+         * @returns {object} - {icon: string, text: string}
+         */
+        function separateIconFromText(text) {
+            if (!text) return { icon: '', text: '' };
+            
+            // 匹配开头的emoji（支持多种emoji格式）
+            const emojiRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F910}-\u{1F96B}\u{1F980}-\u{1F9E0}]+)\s*/u;
+            const match = text.match(emojiRegex);
+            
+            if (match) {
+                return {
+                    icon: match[1],
+                    text: text.substring(match[0].length).trim()
+                };
+            }
+            
+            return { icon: '', text: text.trim() };
+        }
+
+        /**
+         * 组合图标和文本
+         * @param {string} icon - 图标emoji
+         * @param {string} text - 纯文本
+         * @returns {string} - 组合后的文本
+         */
+        function combineIconAndText(icon, text) {
+            if (!text) return '';
+            if (!icon) return text.trim();
+            return `${icon} ${text.trim()}`;
+        }
+
+        /**
+         * 选择图标（点击推荐图标时调用）
+         * @param {string} fieldId - 目标输入框ID
+         * @param {string} icon - 选择的图标
+         */
+        function selectIcon(fieldId, icon) {
+            const input = document.getElementById(fieldId);
+            if (input) {
+                input.value = icon;
+                input.focus();
+            }
+        }
+
+        function addScenario(type) {
+            tempCoreValues = [];
+            tempImageData = null;
+            
+            openModal('添加场景', `
+                <div class="form-group">
+                    <label>背景图片</label>
+                    <div id="image-upload-container" class="image-upload-area" onclick="document.getElementById('image-file-input').click()">
+                        <div id="image-placeholder">
+                            <div style="font-size: 40px; color: #ccc;">📷</div>
+                            <div style="margin-top: 10px; color: #999;">点击上传图片</div>
+                            <div style="font-size: 12px; color: #ccc; margin-top: 5px;">支持 JPG、PNG，建议尺寸 1200x600</div>
+                        </div>
+                        <div id="image-preview-container" style="display: none;"></div>
+                    </div>
+                    <input type="file" id="image-file-input" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                </div>
+                <div class="form-group">
+                    <label>场景痛点</label>
+                    <div class="icon-text-group">
+                        <div class="icon-selector">
+                            <input type="text" id="modal-pain-point-icon" placeholder="😔" maxlength="2">
+                        </div>
+                        <div class="text-input">
+                            <textarea id="modal-pain-point-text" rows="2" placeholder="如: 传统礼物千篇一律？想送一份有心意的特别礼物？"></textarea>
+                        </div>
+                    </div>
+                    <div class="icon-suggestions">
+                        <span onclick="selectIcon('modal-pain-point-icon', '😔')" title="失望、困扰">😔</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '😕')" title="疑惑、不确定">😕</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '❓')" title="疑问">❓</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '😰')" title="担忧">😰</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '🤔')" title="思考、犹豫">🤔</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '💭')" title="思考气泡">💭</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '⚠️')" title="警示、问题">⚠️</span>
+                    </div>
+                    <div class="icon-hint">💡 点击选择推荐图标，或直接在左侧输入框输入emoji</div>
+                </div>
+                <div class="form-group">
+                    <label>定制方案标题</label>
+                    <input type="text" id="modal-title-field" placeholder="如: 节日礼赠">
+                </div>
+                <div class="form-group">
+                    <label>定制方案</label>
+                    <div class="icon-text-group">
+                        <div class="icon-selector">
+                            <input type="text" id="modal-solution-icon" placeholder="💡" maxlength="2">
+                        </div>
+                        <div class="text-input">
+                            <textarea id="modal-solution-text" rows="3" placeholder="如: 专属茶园认养礼盒 + 四季新茶配送，让每个节日都有新茶相伴"></textarea>
+                        </div>
+                    </div>
+                    <div class="icon-suggestions">
+                        <span onclick="selectIcon('modal-solution-icon', '💡')" title="好主意、解决方案">💡</span>
+                        <span onclick="selectIcon('modal-solution-icon', '✨')" title="闪亮、出色">✨</span>
+                        <span onclick="selectIcon('modal-solution-icon', '🎯')" title="精准、目标明确">🎯</span>
+                        <span onclick="selectIcon('modal-solution-icon', '🌟')" title="优质、卓越">🌟</span>
+                        <span onclick="selectIcon('modal-solution-icon', '⭐')" title="推荐">⭐</span>
+                        <span onclick="selectIcon('modal-solution-icon', '🔆')" title="明亮、清晰">🔆</span>
+                        <span onclick="selectIcon('modal-solution-icon', '💫')" title="神奇、超越">💫</span>
+                        <span onclick="selectIcon('modal-solution-icon', '🎁')" title="礼物、惊喜">🎁</span>
+                    </div>
+                    <div class="icon-hint">💡 点击选择推荐图标，或直接在左侧输入框输入emoji</div>
+                </div>
+                <div class="form-group">
+                    <label>核心价值</label>
+                    <div class="core-value-editor">
+                        <div id="core-values-list"></div>
+                        <div class="add-value-btn" onclick="addCoreValueInline()">
+                            <span>➕</span>
+                            <span>添加核心价值</span>
+                        </div>
+                    </div>
+                </div>
+            `, async () => {
+                // 组合图标和文本
+                const painPointIcon = document.getElementById('modal-pain-point-icon').value;
+                const painPointText = document.getElementById('modal-pain-point-text').value;
+                const solutionIcon = document.getElementById('modal-solution-icon').value;
+                const solutionText = document.getElementById('modal-solution-text').value;
+                
+                const newItem = {
+                    icon: '', // 移除场景图标
+                    background_image: tempImageData || '',
+                    title: document.getElementById('modal-title-field').value,
+                    pain_point: combineIconAndText(painPointIcon, painPointText),
+                    solution: combineIconAndText(solutionIcon, solutionText),
+                    core_values: [...tempCoreValues],
+                    // 保留旧字段以兼容
+                    content: '',
+                    application: '',
+                    effect: ''
+                };
+                if (type === 'private') {
+                    // 确保数组已初始化
+                    if (!privateData.scenario_applications) {
+                        privateData.scenario_applications = [];
+                    }
+                    privateData.scenario_applications.push(newItem);
+                    renderPrivatePlan(privateData);
+                } else {
+                    // 确保数组已初始化
+                    if (!enterpriseData.use_scenarios) {
+                        enterpriseData.use_scenarios = [];
+                    }
+                    enterpriseData.use_scenarios.push(newItem);
+                    renderEnterprisePlan(enterpriseData);
+                }
+                closeModal();
+                await autoSavePlan(type);
+            });
+            
+            renderCoreValuesList();
+        }
+
+        function editScenario(type, index) {
+            const data = type === 'private' ? privateData : enterpriseData;
+            const items = type === 'private' ? data.scenario_applications : data.use_scenarios;
+            const item = items[index];
+            
+            // 初始化临时核心价值数组和图片数据
+            tempCoreValues = item.core_values ? [...item.core_values] : [];
+            tempImageData = item.background_image || null;
+            
+            // 分离痛点和方案的图标和文本
+            const painPoint = separateIconFromText(item.pain_point || '');
+            const solution = separateIconFromText(item.solution || '');
+            
+            openModal('编辑场景', `
+                <div class="form-group">
+                    <label>背景图片</label>
+                    <div id="image-upload-container" class="image-upload-area ${item.background_image ? 'has-image' : ''}" onclick="document.getElementById('image-file-input').click()">
+                        <div id="image-placeholder" style="${item.background_image ? 'display: none;' : ''}">
+                            <div style="font-size: 40px; color: #ccc;">📷</div>
+                            <div style="margin-top: 10px; color: #999;">点击上传图片</div>
+                            <div style="font-size: 12px; color: #ccc; margin-top: 5px;">支持 JPG、PNG，建议尺寸 1200x600</div>
+                        </div>
+                        <div id="image-preview-container" style="${item.background_image ? '' : 'display: none;'}">
+                            ${item.background_image ? `
+                                <img src="${item.background_image}" class="image-preview" alt="背景图">
+                                <div class="image-actions">
+                                    <button type="button" class="btn btn-secondary btn-small" onclick="event.stopPropagation(); document.getElementById('image-file-input').click()">替换</button>
+                                    <button type="button" class="btn btn-danger btn-small" onclick="event.stopPropagation(); removeImage()">删除</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <input type="file" id="image-file-input" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                </div>
+                <div class="form-group">
+                    <label>场景痛点</label>
+                    <div class="icon-text-group">
+                        <div class="icon-selector">
+                            <input type="text" id="modal-pain-point-icon" value="${painPoint.icon}" placeholder="😔" maxlength="2">
+                        </div>
+                        <div class="text-input">
+                            <textarea id="modal-pain-point-text" rows="2" placeholder="如: 传统礼物千篇一律？想送一份有心意的特别礼物？">${painPoint.text}</textarea>
+                        </div>
+                    </div>
+                    <div class="icon-suggestions">
+                        <span onclick="selectIcon('modal-pain-point-icon', '😔')" title="失望、困扰">😔</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '😕')" title="疑惑、不确定">😕</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '❓')" title="疑问">❓</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '😰')" title="担忧">😰</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '🤔')" title="思考、犹豫">🤔</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '💭')" title="思考气泡">💭</span>
+                        <span onclick="selectIcon('modal-pain-point-icon', '⚠️')" title="警示、问题">⚠️</span>
+                    </div>
+                    <div class="icon-hint">💡 点击选择推荐图标，或直接在左侧输入框输入emoji</div>
+                </div>
+                <div class="form-group">
+                    <label>定制方案标题</label>
+                    <input type="text" id="modal-title-field" value="${item.title || ''}" placeholder="如: 节日礼赠">
+                </div>
+                <div class="form-group">
+                    <label>定制方案</label>
+                    <div class="icon-text-group">
+                        <div class="icon-selector">
+                            <input type="text" id="modal-solution-icon" value="${solution.icon}" placeholder="💡" maxlength="2">
+                        </div>
+                        <div class="text-input">
+                            <textarea id="modal-solution-text" rows="3" placeholder="如: 专属茶园认养礼盒 + 四季新茶配送，让每个节日都有新茶相伴">${solution.text}</textarea>
+                        </div>
+                    </div>
+                    <div class="icon-suggestions">
+                        <span onclick="selectIcon('modal-solution-icon', '💡')" title="好主意、解决方案">💡</span>
+                        <span onclick="selectIcon('modal-solution-icon', '✨')" title="闪亮、出色">✨</span>
+                        <span onclick="selectIcon('modal-solution-icon', '🎯')" title="精准、目标明确">🎯</span>
+                        <span onclick="selectIcon('modal-solution-icon', '🌟')" title="优质、卓越">🌟</span>
+                        <span onclick="selectIcon('modal-solution-icon', '⭐')" title="推荐">⭐</span>
+                        <span onclick="selectIcon('modal-solution-icon', '🔆')" title="明亮、清晰">🔆</span>
+                        <span onclick="selectIcon('modal-solution-icon', '💫')" title="神奇、超越">💫</span>
+                        <span onclick="selectIcon('modal-solution-icon', '🎁')" title="礼物、惊喜">🎁</span>
+                    </div>
+                    <div class="icon-hint">💡 点击选择推荐图标，或直接在左侧输入框输入emoji</div>
+                </div>
+                <div class="form-group">
+                    <label>核心价值</label>
+                    <div class="core-value-editor">
+                        <div id="core-values-list"></div>
+                        <div class="add-value-btn" onclick="addCoreValueInline()">
+                            <span>➕</span>
+                            <span>添加核心价值</span>
+                        </div>
+                    </div>
+                </div>
+            `, async () => {
+                // 组合图标和文本
+                const painPointIcon = document.getElementById('modal-pain-point-icon').value;
+                const painPointText = document.getElementById('modal-pain-point-text').value;
+                const solutionIcon = document.getElementById('modal-solution-icon').value;
+                const solutionText = document.getElementById('modal-solution-text').value;
+                
+                items[index] = {
+                    icon: '', // 移除场景图标
+                    background_image: tempImageData || '',
+                    title: document.getElementById('modal-title-field').value,
+                    pain_point: combineIconAndText(painPointIcon, painPointText),
+                    solution: combineIconAndText(solutionIcon, solutionText),
+                    core_values: [...tempCoreValues],
+                    // 保留旧字段以兼容
+                    content: item.content || '',
+                    application: item.application || '',
+                    effect: item.effect || ''
+                };
+                type === 'private' ? renderPrivatePlan(privateData) : renderEnterprisePlan(enterpriseData);
+                closeModal();
+                await autoSavePlan(type);
+            });
+            
+            // 渲染已有的核心价值
+            renderCoreValuesList();
+        }
+
+        async function deleteScenario(type, index) {
+            if (confirm('确定要删除这个场景吗？')) {
+                const data = type === 'private' ? privateData : enterpriseData;
+                const items = type === 'private' ? data.scenario_applications : data.use_scenarios;
+                items.splice(index, 1);
+                type === 'private' ? renderPrivatePlan(privateData) : renderEnterprisePlan(enterpriseData);
+                await autoSavePlan(type);
+            }
+        }
+
+        // ========== 图片上传管理 ==========
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                console.log('未选择文件');
+                return;
+            }
+            
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                alert('请选择图片文件！');
+                // 清除输入框
+                event.target.value = '';
+                return;
+            }
+            
+            // 验证文件大小（最大5MB）
+            const fileSizeBytes = file.size;
+            const fileSizeMB = (fileSizeBytes / 1024 / 1024).toFixed(2);
+            const maxSizeBytes = 5 * 1024 * 1024;
+            
+            console.log('==== 图片上传信息 ====');
+            console.log(`文件名: ${file.name}`);
+            console.log(`文件类型: ${file.type}`);
+            console.log(`文件大小(字节): ${fileSizeBytes}`);
+            console.log(`文件大小(MB): ${fileSizeMB}`);
+            console.log(`限制大小(字节): ${maxSizeBytes}`);
+            console.log(`是否超出: ${fileSizeBytes > maxSizeBytes}`);
+            
+            if (fileSizeBytes > maxSizeBytes) {
+                alert(`图片大小不能超过5MB！\n\n当前文件: ${file.name}\n文件大小: ${fileSizeMB} MB\n最大限制: 5 MB`);
+                // 清除输入框
+                event.target.value = '';
+                return;
+            }
+            
+            // 读取文件并转换为Base64
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Size = (e.target.result.length / 1024 / 1024).toFixed(2);
+                console.log(`Base64编码后大小: ${base64Size} MB`);
+                console.log('图片上传成功！');
+                tempImageData = e.target.result;
+                updateImagePreview(tempImageData);
+            };
+            reader.onerror = function(error) {
+                console.error('读取文件失败:', error);
+                alert('读取文件失败，请重试！');
+                event.target.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateImagePreview(imageData) {
+            const container = document.getElementById('image-upload-container');
+            const placeholder = document.getElementById('image-placeholder');
+            const previewContainer = document.getElementById('image-preview-container');
+            
+            if (!container || !placeholder || !previewContainer) return;
+            
+            container.classList.add('has-image');
+            placeholder.style.display = 'none';
+            previewContainer.style.display = 'block';
+            previewContainer.innerHTML = `
+                <img src="${imageData}" class="image-preview" alt="背景图">
+                <div class="image-actions">
+                    <button type="button" class="btn btn-secondary btn-small" onclick="event.stopPropagation(); document.getElementById('image-file-input').click()">替换</button>
+                    <button type="button" class="btn btn-danger btn-small" onclick="event.stopPropagation(); removeImage()">删除</button>
+                </div>
+            `;
+        }
+
+        function removeImage() {
+            tempImageData = null;
+            const container = document.getElementById('image-upload-container');
+            const placeholder = document.getElementById('image-placeholder');
+            const previewContainer = document.getElementById('image-preview-container');
+            
+            if (container && placeholder && previewContainer) {
+                container.classList.remove('has-image');
+                placeholder.style.display = 'block';
+                previewContainer.style.display = 'none';
+                previewContainer.innerHTML = '';
+            }
+            
+            // 重置文件输入
+            const fileInput = document.getElementById('image-file-input');
+            if (fileInput) fileInput.value = '';
+        }
+
+        // ========== 核心价值管理（用于场景化应用） ==========
+        function addCoreValueInline() {
+            // 添加一个新的输入行
+            tempCoreValues.push({ icon: '', title: '', description: '' });
+            renderCoreValuesList();
+            
+            // 聚焦到新添加的输入框
+            setTimeout(() => {
+                const inputs = document.querySelectorAll('.core-value-input-row input');
+                if (inputs.length > 0) {
+                    inputs[inputs.length - 2].focus(); // 聚焦到图标输入框
+                }
+            }, 0);
+        }
+
+        function updateCoreValue(index, field, value) {
+            if (tempCoreValues[index]) {
+                tempCoreValues[index][field] = value;
+            }
+        }
+
+        function deleteCoreValue(index) {
+            tempCoreValues.splice(index, 1);
+            renderCoreValuesList();
+        }
+
+        function renderCoreValuesList() {
+            const listContainer = document.getElementById('core-values-list');
+            if (!listContainer) return;
+            
+            if (tempCoreValues.length === 0) {
+                listContainer.innerHTML = '<div style="color: #999; font-size: 13px; text-align: center; padding: 10px;">暂无核心价值</div>';
+                return;
+            }
+            
+            listContainer.innerHTML = tempCoreValues.map((value, index) => `
+                <div class="core-value-input-row">
+                    <input type="text" 
+                           class="icon-input" 
+                           placeholder="🎯" 
+                           value="${value.icon || ''}"
+                           oninput="updateCoreValue(${index}, 'icon', this.value)"
+                           maxlength="2">
+                    <input type="text" 
+                           placeholder="如: 体面有心意" 
+                           value="${value.title || ''}"
+                           oninput="updateCoreValue(${index}, 'title', this.value)">
+                    <button type="button" class="btn btn-danger btn-small" onclick="deleteCoreValue(${index})" title="删除">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        // ========== 定制套餐管理（新增地块特色）==========
+        let tempPackageRights = [];
+
+        function addPackage() {
+            tempPackageRights = [];
+            
+            openModal('添加套餐', `
+                <div class="form-group">
+                    <label>套餐名称</label>
+                    <input type="text" id="modal-name" placeholder="如: 标准套餐">
+                </div>
+                <div class="form-group">
+                    <label>套餐价格</label>
+                    <input type="text" id="modal-price" placeholder="如: ¥18,800/年">
+                </div>
+                <div class="form-group">
+                    <label>面向客群</label>
+                    <input type="text" id="modal-target-audience" placeholder="如: 热爱茶文化、注重品质与性价比的茶友">
+                </div>
+                <div class="form-group">
+                    <label>地块特色</label>
+                    <input type="text" id="modal-area-features" placeholder="如: 0.3亩位于规范管理的优质生态茶区">
+                </div>
+                <div class="form-group">
+                    <label>专属产出</label>
+                    <input type="text" id="modal-exclusive-output" placeholder="如: 年产精制高级绿茶约5-8斤">
+                </div>
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #e0e0e0;">
+                    <h4 style="margin-bottom: 1rem; color: #333;">核心权益管理</h4>
+                    <div id="temp-rights-list"></div>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addTempPackageRight()" style="margin-top: 0.5rem;">+ 添加权益</button>
+                </div>
+            `, async () => {
+                const newPackage = {
+                    name: document.getElementById('modal-name').value,
+                    price: document.getElementById('modal-price').value,
+                    target_audience: document.getElementById('modal-target-audience').value,
+                    area_features: document.getElementById('modal-area-features').value,
+                    exclusive_output: document.getElementById('modal-exclusive-output').value,
+                    tagline: '',
+                    features: '',
+                    rights: tempPackageRights
+                };
+                // 确保数组已初始化
+                if (!privateData.packages) {
+                    privateData.packages = [];
+                }
+                privateData.packages.push(newPackage);
+                renderPrivatePlan(privateData);
+                closeModal();
+                await autoSavePlan('private');
+            });
+            
+            setTimeout(() => renderTempPackageRights(), 100);
+        }
+
+        function renderTempPackageRights() {
+            const container = document.getElementById('temp-rights-list');
+            if (!container) return;
+            
+            if (tempPackageRights.length === 0) {
+                container.innerHTML = '<div style="color: #999; padding: 0.5rem; text-align: center;">暂无权益，点击下方按钮添加</div>';
+            } else {
+                container.innerHTML = tempPackageRights.map((right, rightIndex) => `
+                    <div class="nested-item" style="margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong style="color: #555;">权益 ${rightIndex + 1}</strong>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" class="btn btn-success btn-small" onclick="saveTempPackageRight(${rightIndex})">💾</button>
+                                <button type="button" class="btn btn-danger btn-small" onclick="deleteTempPackageRight(${rightIndex})">删除</button>
+                            </div>
+                        </div>
+                        <input type="text" 
+                               id="temp-right-icon-${rightIndex}"
+                               value="${right.icon || ''}" 
+                               placeholder="图标 (emoji，如: ✅)"
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.5rem;">
+                        <input type="text" 
+                               id="temp-right-title-${rightIndex}"
+                               value="${right.title}" 
+                               placeholder="权益标题"
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.5rem;">
+                        <textarea 
+                               id="temp-right-desc-${rightIndex}"
+                               placeholder="权益详细内容"
+                               rows="2"
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; resize: vertical;">${right.description}</textarea>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function saveTempPackageRight(rightIndex) {
+            const iconInput = document.getElementById(`temp-right-icon-${rightIndex}`);
+            const titleInput = document.getElementById(`temp-right-title-${rightIndex}`);
+            const descInput = document.getElementById(`temp-right-desc-${rightIndex}`);
+            
+            if (iconInput && titleInput && descInput) {
+                tempPackageRights[rightIndex].icon = iconInput.value;
+                tempPackageRights[rightIndex].title = titleInput.value;
+                tempPackageRights[rightIndex].description = descInput.value;
+                showMessage(`✓ 权益 ${rightIndex + 1} 已保存`, 'success');
+            }
+        }
+
+        function addTempPackageRight() {
+            tempPackageRights.push({
+                icon: '',
+                title: '',
+                description: ''
+            });
+            renderTempPackageRights();
+        }
+
+        function deleteTempPackageRight(rightIndex) {
+            if (confirm('确定要删除这个权益吗？')) {
+                tempPackageRights.splice(rightIndex, 1);
+                renderTempPackageRights();
+            }
+        }
+
+        function editPackage(index) {
+            const pkg = privateData.packages[index];
+            openModal('编辑套餐', `
+                <div class="form-group">
+                    <label>套餐名称</label>
+                    <input type="text" id="modal-name" value="${pkg.name || ''}" placeholder="如: 标准套餐">
+                </div>
+                <div class="form-group">
+                    <label>套餐价格</label>
+                    <input type="text" id="modal-price" value="${pkg.price || ''}" placeholder="如: ¥18,800/年">
+                </div>
+                <div class="form-group">
+                    <label>面向客群</label>
+                    <input type="text" id="modal-target-audience" value="${pkg.target_audience || ''}" placeholder="如: 热爱茶文化、注重品质与性价比的茶友">
+                </div>
+                <div class="form-group">
+                    <label>地块特色</label>
+                    <input type="text" id="modal-area-features" value="${pkg.area_features || ''}" placeholder="如: 0.3亩位于规范管理的优质生态茶区">
+                </div>
+                <div class="form-group">
+                    <label>专属产出</label>
+                    <input type="text" id="modal-exclusive-output" value="${pkg.exclusive_output || pkg.tagline || ''}" placeholder="如: 年产精制高级绿茶约5-8斤">
+                </div>
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #e0e0e0;">
+                    <h4 style="margin-bottom: 1rem; color: #333;">核心权益管理</h4>
+                    <div id="rights-list"></div>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addPackageRight(${index})" style="margin-top: 0.5rem;">+ 添加权益</button>
+                </div>
+            `, async () => {
+                privateData.packages[index].name = document.getElementById('modal-name').value;
+                privateData.packages[index].price = document.getElementById('modal-price').value;
+                privateData.packages[index].target_audience = document.getElementById('modal-target-audience').value;
+                privateData.packages[index].area_features = document.getElementById('modal-area-features').value;
+                privateData.packages[index].exclusive_output = document.getElementById('modal-exclusive-output').value;
+                renderPrivatePlan(privateData);
+                closeModal();
+                await autoSavePlan('private');
+            });
+            
+            renderPackageRights(index);
+        }
+
+        function renderPackageRights(packageIndex) {
+            const rights = privateData.packages[packageIndex].rights || [];
+            const container = document.getElementById('rights-list');
+            if (!container) return;
+            
+            if (rights.length === 0) {
+                container.innerHTML = '<div style="color: #999; padding: 0.5rem; text-align: center;">暂无权益，点击下方按钮添加</div>';
+            } else {
+                container.innerHTML = rights.map((right, rightIndex) => `
+                    <div class="nested-item" style="margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong style="color: #555;">权益 ${rightIndex + 1}</strong>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" class="btn btn-success btn-small" onclick="savePackageRight(${packageIndex}, ${rightIndex})">💾</button>
+                                <button type="button" class="btn btn-danger btn-small" onclick="deletePackageRight(${packageIndex}, ${rightIndex})">删除</button>
+                            </div>
+                        </div>
+                        <input type="text" 
+                               id="right-icon-${packageIndex}-${rightIndex}"
+                               value="${right.icon || ''}" 
+                               placeholder="图标 (emoji，如: ✅)"
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.5rem;">
+                        <input type="text" 
+                               id="right-title-${packageIndex}-${rightIndex}"
+                               value="${right.title}" 
+                               placeholder="权益标题"
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.5rem;">
+                        <textarea 
+                               id="right-desc-${packageIndex}-${rightIndex}"
+                               placeholder="权益详细内容"
+                               rows="2"
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; resize: vertical;">${right.description}</textarea>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function savePackageRight(packageIndex, rightIndex) {
+            const iconInput = document.getElementById(`right-icon-${packageIndex}-${rightIndex}`);
+            const titleInput = document.getElementById(`right-title-${packageIndex}-${rightIndex}`);
+            const descInput = document.getElementById(`right-desc-${packageIndex}-${rightIndex}`);
+            
+            if (iconInput && titleInput && descInput) {
+                privateData.packages[packageIndex].rights[rightIndex].icon = iconInput.value;
+                privateData.packages[packageIndex].rights[rightIndex].title = titleInput.value;
+                privateData.packages[packageIndex].rights[rightIndex].description = descInput.value;
+                showMessage(`✓ 权益 ${rightIndex + 1} 已保存`, 'success');
+            }
+        }
+
+        function addPackageRight(packageIndex) {
+            // 确保 rights 数组已初始化
+            if (!privateData.packages[packageIndex].rights) {
+                privateData.packages[packageIndex].rights = [];
+            }
+            privateData.packages[packageIndex].rights.push({
+                icon: '',
+                title: '',
+                description: ''
+            });
+            renderPackageRights(packageIndex);
+        }
+
+        function deletePackageRight(packageIndex, rightIndex) {
+            if (confirm('确定要删除这个权益吗？')) {
+                privateData.packages[packageIndex].rights.splice(rightIndex, 1);
+                renderPackageRights(packageIndex);
+            }
+        }
+
+        async function deletePackage(index) {
+            if (confirm('确定要删除这个套餐吗？')) {
+                privateData.packages.splice(index, 1);
+                renderPrivatePlan(privateData);
+                await autoSavePlan('private');
+            }
+        }
+
+        // ========== 流程步骤管理 ==========
+        function addProcessStep(type) {
+            openModal('添加流程步骤', `
+                <div class="form-group">
+                    <label>步骤编号</label>
+                    <input type="text" id="modal-step" placeholder="如: 1 或 第一步">
+                </div>
+                <div class="form-group">
+                    <label>步骤标题</label>
+                    <input type="text" id="modal-title-field" placeholder="步骤标题">
+                </div>
+                <div class="form-group">
+                    <label>步骤描述</label>
+                    <textarea id="modal-description" rows="4" placeholder="详细描述"></textarea>
+                </div>
+            `, async () => {
+                const newStep = {
+                    step: document.getElementById('modal-step').value,
+                    title: document.getElementById('modal-title-field').value,
+                    description: document.getElementById('modal-description').value
+                };
+                const data = type === 'private' ? privateData : enterpriseData;
+                // 确保数组已初始化
+                if (!data.process_steps) {
+                    data.process_steps = [];
+                }
+                data.process_steps.push(newStep);
+                type === 'private' ? renderPrivatePlan(privateData) : renderEnterprisePlan(enterpriseData);
+                closeModal();
+                await autoSavePlan(type);
+            });
+        }
+
+        function editProcessStep(type, index) {
+            const data = type === 'private' ? privateData : enterpriseData;
+            const item = data.process_steps[index];
+            
+            openModal('编辑流程步骤', `
+                <div class="form-group">
+                    <label>步骤编号</label>
+                    <input type="text" id="modal-step" value="${item.step || ''}" placeholder="如: 1 或 第一步">
+                </div>
+                <div class="form-group">
+                    <label>步骤标题</label>
+                    <input type="text" id="modal-title-field" value="${item.title || ''}" placeholder="步骤标题">
+                </div>
+                <div class="form-group">
+                    <label>步骤描述</label>
+                    <textarea id="modal-description" rows="4" placeholder="详细描述">${item.description || ''}</textarea>
+                </div>
+            `, async () => {
+                data.process_steps[index] = {
+                    step: document.getElementById('modal-step').value,
+                    title: document.getElementById('modal-title-field').value,
+                    description: document.getElementById('modal-description').value
+                };
+                type === 'private' ? renderPrivatePlan(privateData) : renderEnterprisePlan(enterpriseData);
+                closeModal();
+                await autoSavePlan(type);
+            });
+        }
+
+        async function deleteProcessStep(type, index) {
+            if (confirm('确定要删除这个流程步骤吗？')) {
+                const data = type === 'private' ? privateData : enterpriseData;
+                data.process_steps.splice(index, 1);
+                type === 'private' ? renderPrivatePlan(privateData) : renderEnterprisePlan(enterpriseData);
+                await autoSavePlan(type);
+            }
+        }
+
+        // ========== 定制套餐比对管理 - 动态套餐支持 ==========
+        
+        /**
+         * 渲染套餐名称列表
+         */
+        function renderPackageNames() {
+            const container = document.getElementById('package-names-list');
+            if (!container) {
+                console.warn('⚠️ package-names-list 元素不存在');
+                return;
+            }
+            
+            const packageNames = privateData?.comparison_package_names || [];
+            
+            console.log('🔍 renderPackageNames 被调用');
+            console.log('🔍 packageNames:', packageNames);
+            console.log('🔍 packageNames.length:', packageNames.length);
+            
+            if (packageNames.length === 0) {
+                console.log('⚠️ 暂无套餐列');
+                container.innerHTML = '<div style="color: #999; font-size: 0.9rem;">暂无套餐，请点击下方按钮添加</div>';
+                return;
+            }
+            
+            container.innerHTML = packageNames.map((name, index) => `
+                <div class="package-name-tag">
+                    <input type="text" 
+                           value="${name}"
+                           placeholder="套餐名称"
+                           oninput="updatePackageName(${index}, this.value)"
+                           title="点击可编辑套餐名称">
+                    <button class="btn-delete-package" 
+                            onclick="deletePackageName(${index})"
+                            title="删除此套餐列">
+                        ×
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        /**
+         * 添加新套餐列
+         */
+        function addPackageName() {
+            if (!privateData.comparison_package_names) {
+                privateData.comparison_package_names = [];
+            }
+            
+            const newName = `套餐${privateData.comparison_package_names.length + 1}`;
+            privateData.comparison_package_names.push(newName);
+            
+            // 为所有现有特性添加新的空值
+            if (privateData.comparison_features) {
+                privateData.comparison_features.forEach(feature => {
+                    if (!feature.values) feature.values = [];
+                    feature.values.push('');
+                });
+            }
+            
+            renderPackageNames();
+            renderComparisonFeatures();
+            showMessage(`✓ 已添加新套餐列"${newName}"，请点击"💾 保存比对数据"按钮保存`, 'success');
+        }
+        
+        /**
+         * 更新套餐名称
+         */
+        function updatePackageName(index, newName) {
+            if (!privateData.comparison_package_names) return;
+            
+            privateData.comparison_package_names[index] = newName;
+            renderComparisonFeatures(); // 重新渲染表格以更新表头
+            
+            // 提示用户保存（不自动保存）
+            if (window.packageNameUpdateHint) {
+                clearTimeout(window.packageNameUpdateHint);
+            }
+            
+            window.packageNameUpdateHint = setTimeout(() => {
+                showMessage('套餐名称已修改，请点击"💾 保存比对数据"按钮保存', 'success');
+            }, 500);
+        }
+        
+        /**
+         * 删除套餐列
+         */
+        async function deletePackageName(index) {
+            const packageName = privateData.comparison_package_names[index];
+            
+            if (!confirm(`确定要删除套餐列"${packageName}"吗？\n\n该列对应的所有比对数据也会被删除。`)) {
+                return;
+            }
+            
+            // 删除套餐名称
+            privateData.comparison_package_names.splice(index, 1);
+            
+            // 从所有特性中删除对应索引的值
+            if (privateData.comparison_features) {
+                privateData.comparison_features.forEach(feature => {
+                    if (feature.values && feature.values.length > index) {
+                        feature.values.splice(index, 1);
+                    }
+                });
+            }
+            
+            renderPackageNames();
+            renderComparisonFeatures();
+            await autoSavePlan('private');
+            showMessage(`✓ 已删除套餐列"${packageName}"`, 'success');
+        }
+        
+        /**
+         * 渲染套餐比对特性表格 - 动态列支持
+         */
+        function renderComparisonFeatures() {
+            const container = document.getElementById('comparison-features-container');
+            const features = privateData?.comparison_features || [];
+            const packageNames = privateData?.comparison_package_names || [];
+            
+            console.log('🔍 renderComparisonFeatures 被调用');
+            console.log('🔍 privateData:', privateData);
+            console.log('🔍 features:', features);
+            console.log('🔍 packageNames:', packageNames);
+            console.log('🔍 features.length:', features.length);
+            console.log('🔍 packageNames.length:', packageNames.length);
+            
+            // 更新计数徽章
+            const countBadge = document.getElementById('private-comparison-count');
+            if (countBadge) {
+                countBadge.textContent = features.length;
+            }
+            
+            if (!container) {
+                console.warn('⚠️ comparison-features-container 元素不存在');
+                return;
+            }
+            
+            if (features.length === 0) {
+                console.log('⚠️ 暂无比对特性');
+                container.innerHTML = '<div class="comparison-empty">暂无比对特性，点击下方按钮添加</div>';
+                return;
+            }
+            
+            if (packageNames.length === 0) {
+                console.log('⚠️ 暂无套餐列');
+                container.innerHTML = '<div class="comparison-empty">请先添加套餐列（在上方"套餐名称设置"中添加）</div>';
+                return;
+            }
+            
+            // 动态生成表头
+            const headerColumns = packageNames.map(name => `<th>${name}</th>`).join('');
+            
+            // 动态生成数据行
+            const tableHTML = `
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>图标</th>
+                            <th>权益 (Feature)</th>
+                            ${headerColumns}
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${features.map((feature, featureIndex) => {
+                            // 确保values数组长度与套餐数量一致
+                            if (!feature.values) feature.values = [];
+                            while (feature.values.length < packageNames.length) {
+                                feature.values.push('');
+                            }
+                            
+                            const valueCells = feature.values.slice(0, packageNames.length).map((value, valueIndex) => `
+                                <td>
+                                    <input type="text" 
+                                           value="${value || ''}"
+                                           placeholder="输入值"
+                                           oninput="updateComparisonValue(${featureIndex}, ${valueIndex}, this.value)">
+                                </td>
+                            `).join('');
+                            
+                            return `
+                                <tr>
+                                    <td class="icon-cell">
+                                        <input type="text" 
+                                               value="${feature.icon || ''}"
+                                               placeholder="📊"
+                                               maxlength="2"
+                                               oninput="updateComparisonFeature(${featureIndex}, 'icon', this.value)">
+                                    </td>
+                                    <td class="feature-name-cell">
+                                        <input type="text" 
+                                               value="${feature.feature_name || ''}"
+                                               placeholder="如: 地块面积"
+                                               oninput="updateComparisonFeature(${featureIndex}, 'feature_name', this.value)">
+                                    </td>
+                                    ${valueCells}
+                                    <td class="action-cell">
+                                        <button type="button" 
+                                                class="btn-delete-feature" 
+                                                onclick="deleteComparisonFeature(${featureIndex})"
+                                                title="删除此特性">
+                                            🗑️ 删除
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = tableHTML;
+        }
+        
+        /**
+         * 添加新的比对特性
+         */
+        function addComparisonFeature() {
+            if (!privateData.comparison_features) {
+                privateData.comparison_features = [];
+            }
+            
+            const packageNames = privateData.comparison_package_names || [];
+            
+            if (packageNames.length === 0) {
+                alert('请先添加套餐列（在上方"套餐名称设置"中添加）');
+                return;
+            }
+            
+            // 创建新特性，values数组长度与套餐数量一致
+            privateData.comparison_features.push({
+                icon: '',
+                feature_name: '',
+                values: new Array(packageNames.length).fill('')
+            });
+            
+            renderComparisonFeatures();
+            showMessage('✓ 已添加新的比对特性，填写完成后请点击"💾 保存比对数据"按钮', 'success');
+        }
+        
+        /**
+         * 更新比对特性的基本字段（icon, feature_name）
+         */
+        function updateComparisonFeature(featureIndex, field, value) {
+            if (!privateData.comparison_features || !privateData.comparison_features[featureIndex]) {
+                return;
+            }
+            
+            privateData.comparison_features[featureIndex][field] = value;
+            
+            // 防抖保存
+            triggerComparisonSave();
+        }
+        
+        /**
+         * 更新比对特性的值
+         */
+        function updateComparisonValue(featureIndex, valueIndex, value) {
+            if (!privateData.comparison_features || !privateData.comparison_features[featureIndex]) {
+                return;
+            }
+            
+            if (!privateData.comparison_features[featureIndex].values) {
+                privateData.comparison_features[featureIndex].values = [];
+            }
+            
+            privateData.comparison_features[featureIndex].values[valueIndex] = value;
+            
+            // 防抖保存
+            triggerComparisonSave();
+        }
+        
+        /**
+         * 触发保存提示（改为手动保存）
+         */
+        function triggerComparisonSave() {
+            if (window.comparisonSaveHint) {
+                clearTimeout(window.comparisonSaveHint);
+            }
+            
+            window.comparisonSaveHint = setTimeout(() => {
+                showMessage('比对数据已修改，请点击"💾 保存比对数据"按钮保存', 'success');
+            }, 1000);
+        }
+        
+        /**
+         * 删除比对特性
+         */
+        async function deleteComparisonFeature(index) {
+            if (!confirm('确定要删除这个比对特性吗？')) {
+                return;
+            }
+            
+            if (!privateData.comparison_features) {
+                return;
+            }
+            
+            privateData.comparison_features.splice(index, 1);
+            renderComparisonFeatures();
+            await autoSavePlan('private');
+            showMessage('✓ 比对特性已删除', 'success');
+        }
+        
+        /**
+         * 手动保存比对数据（套餐列和比对特性）
+         */
+        async function saveComparisonData() {
+            try {
+                // 确保数据存在
+                if (!privateData.comparison_package_names) {
+                    privateData.comparison_package_names = [];
+                }
+                if (!privateData.comparison_features) {
+                    privateData.comparison_features = [];
+                }
+                
+                console.log('📊 ========== 手动保存比对数据 ==========');
+                console.log('📊 套餐名称:', JSON.stringify(privateData.comparison_package_names));
+                console.log('📊 套餐数量:', privateData.comparison_package_names.length);
+                console.log('📊 比对特性数量:', privateData.comparison_features.length);
+                console.log('📊 完整的 privateData.comparison_package_names:', privateData.comparison_package_names);
+                console.log('📊 完整的 privateData.comparison_features:', privateData.comparison_features);
+                
+                // 调用自动保存函数
+                await autoSavePlan('private');
+                
+                // 保存成功后重新加载以确认
+                console.log('📊 保存成功，重新加载数据以验证...');
+                await loadPlan('private');
+                
+                showMessage('✓ 比对数据保存成功！数据已重新加载', 'success');
+            } catch (error) {
+                console.error('❌ 保存比对数据失败:', error);
+                showMessage('✗ 保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // ========== 企业领养 - 服务内容管理 ==========
+        function addServiceContent() {
+            openModal('添加服务内容', `
+                <div class="form-group">
+                    <label>图标 (emoji)</label>
+                    <input type="text" id="modal-icon" placeholder="如: 🏆">
+                </div>
+                <div class="form-group">
+                    <label>服务标题</label>
+                    <input type="text" id="modal-title-field" placeholder="服务标题">
+                </div>
+                <div class="form-group">
+                    <label>服务描述</label>
+                    <textarea id="modal-description" rows="3" placeholder="服务描述"></textarea>
+                </div>
+            `, async () => {
+                const newItem = {
+                    icon: document.getElementById('modal-icon').value,
+                    title: document.getElementById('modal-title-field').value,
+                    description: document.getElementById('modal-description').value
+                };
+                // 确保数组已初始化
+                if (!enterpriseData.service_contents) {
+                    enterpriseData.service_contents = [];
+                }
+                enterpriseData.service_contents.push(newItem);
+                renderEnterprisePlan(enterpriseData);
+                closeModal();
+                await autoSavePlan('enterprise');
+            });
+        }
+
+        function editServiceContent(index) {
+            const item = enterpriseData.service_contents[index];
+            openModal('编辑服务内容', `
+                <div class="form-group">
+                    <label>图标 (emoji)</label>
+                    <input type="text" id="modal-icon" value="${item.icon || ''}" placeholder="如: 🏆">
+                </div>
+                <div class="form-group">
+                    <label>服务标题</label>
+                    <input type="text" id="modal-title-field" value="${item.title || ''}" placeholder="服务标题">
+                </div>
+                <div class="form-group">
+                    <label>服务描述</label>
+                    <textarea id="modal-description" rows="3" placeholder="服务描述">${item.description || ''}</textarea>
+                </div>
+            `, async () => {
+                enterpriseData.service_contents[index] = {
+                    icon: document.getElementById('modal-icon').value,
+                    title: document.getElementById('modal-title-field').value,
+                    description: document.getElementById('modal-description').value
+                };
+                renderEnterprisePlan(enterpriseData);
+                closeModal();
+                await autoSavePlan('enterprise');
+            });
+        }
+
+        async function deleteServiceContent(index) {
+            if (confirm('确定要删除这个服务内容吗？')) {
+                enterpriseData.service_contents.splice(index, 1);
+                renderEnterprisePlan(enterpriseData);
+                await autoSavePlan('enterprise');
+            }
+        }
+
+        // ========== 模态框管理 ==========
+        function openModal(title, bodyHTML, callback) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = bodyHTML;
+            modalCallback = callback;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+            modalCallback = null;
+        }
+
+        function saveModalData() {
+            if (modalCallback) {
+                modalCallback();
+            }
+        }
+
+        // ========== 自动保存功能 ==========
+        async function autoSavePlan(type) {
+            try {
+                let data;
+                
+                if (type === 'private') {
+                    data = privateData;
+                } else if (type === 'enterprise') {
+                    data = enterpriseData;
+                } else if (type === 'b2b') {
+                    data = b2bData;
+                }
+
+                // 清理 MongoDB 元数据字段和虚拟字段
+                const cleanData = JSON.parse(JSON.stringify(data));
+                delete cleanData._id;
+                delete cleanData.__v;
+                delete cleanData.createdAt;
+                delete cleanData.updatedAt;
+                delete cleanData.id;
+                delete cleanData.typeName; // 虚拟字段
+                
+                // 根据类型清理不属于该类型的字段
+                if (type === 'private') {
+                    // 私人定制方案，删除企业和B2B的字段
+                    delete cleanData.use_scenarios;
+                    delete cleanData.service_contents;
+                    delete cleanData.description;
+                } else if (type === 'enterprise') {
+                    // 企业领养方案，删除私人和B2B的字段
+                    delete cleanData.scenario_applications;
+                    delete cleanData.value_propositions;
+                    delete cleanData.packages;
+                    delete cleanData.comparison_package_names;  // 私人定制专属
+                    delete cleanData.comparison_features;       // 私人定制专属
+                    delete cleanData.description;
+                } else if (type === 'b2b') {
+                    // B2B方案，删除私人和企业的字段
+                    delete cleanData.marketing_header;
+                    delete cleanData.value_propositions;
+                    delete cleanData.customer_cases;
+                    delete cleanData.scenario_applications;
+                    delete cleanData.use_scenarios;
+                    delete cleanData.service_contents;
+                    delete cleanData.packages;
+                    delete cleanData.comparison_package_names;  // 私人定制专属
+                    delete cleanData.comparison_features;       // 私人定制专属
+                    delete cleanData.process_steps;
+                }
+                
+                // 调试日志
+                console.log(`💾 准备保存${type}方案`);
+                console.log('📦 数据字段:', Object.keys(cleanData));
+                if (cleanData.scenario_applications) {
+                    console.log('📋 场景化应用数量:', cleanData.scenario_applications.length);
+                }
+                if (cleanData.comparison_package_names) {
+                    console.log('📊 套餐数量:', cleanData.comparison_package_names.length);
+                    console.log('📊 套餐名称:', cleanData.comparison_package_names);
+                }
+                if (cleanData.comparison_features) {
+                    console.log('📊 比对特性数量:', cleanData.comparison_features.length);
+                }
+
+                const response = await fetch(`/api/adoption-plans/${type}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(cleanData),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('❌ 保存失败响应:', errorData);
+                    throw new Error(errorData.message || errorData.error || '自动保存失败');
+                }
+
+                await loadPlan(type);
+                showMessage('✓ 已自动保存', 'success');
+            } catch (error) {
+                console.error('❌ 自动保存失败:', error);
+                showMessage('✗ 自动保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // ========== 保存功能 ==========
+        async function saveCurrentPlan() {
+            try {
+                let type, data;
+                
+                if (currentTab === 'private') {
+                    type = 'private';
+                    privateData.marketing_header = {
+                        title: document.getElementById('private-title').value,
+                        subtitle: document.getElementById('private-subtitle').value
+                    };
+                    data = privateData;
+                } else if (currentTab === 'enterprise') {
+                    type = 'enterprise';
+                    enterpriseData.marketing_header = {
+                        title: document.getElementById('enterprise-title').value,
+                        subtitle: document.getElementById('enterprise-subtitle').value
+                    };
+                    data = enterpriseData;
+                } else if (currentTab === 'b2b') {
+                    type = 'b2b';
+                    b2bData.description = document.getElementById('b2b-description').value;
+                    data = b2bData;
+                }
+
+                const response = await fetch(`/api/adoption-plans/${type}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('保存失败');
+
+                showMessage('✓ 保存成功！', 'success');
+                await loadPlan(type);
+            } catch (error) {
+                showMessage('✗ 保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // ========== 消息提示 ==========
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type} show`;
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

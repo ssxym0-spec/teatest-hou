@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 - 后端登录系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #c33;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #393;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #393;
+        }
+
+        .demo-info {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+
+        .demo-info h3 {
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-info p {
+            color: #6c757d;
+            font-size: 0.8rem;
+            margin: 0.25rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🔐 用户登录</h1>
+            <p>请输入您的用户名和密码</p>
+        </div>
+
+        <!-- 错误消息显示 -->
+        <div id="error-container"></div>
+        <div id="success-container"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required placeholder="请输入用户名">
+            </div>
+
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required placeholder="请输入密码">
+            </div>
+
+            <button type="submit" class="login-btn">登录</button>
+        </form>
+
+        <!-- 忘记密码链接 -->
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="/forgot-password" style="color: #667eea; text-decoration: none; font-size: 0.9rem;">忘记密码？</a>
+        </div>
+
+        <!-- 演示信息 -->
+        <div class="demo-info">
+            <h3>📋 测试账户信息</h3>
+            <p><strong>用户名:</strong> admin</p>
+            <p><strong>密码:</strong> password123</p>
+            <p><em>注意：这是演示账户，请在生产环境中更改。</em></p>
+        </div>
+    </div>
+
+    <script>
+        // 获取 URL 参数
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // 显示错误消息
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.innerHTML = '<div class="error-message">' + message + '</div>';
+        }
+
+        // 显示成功消息
+        function showSuccess(message) {
+            const successContainer = document.getElementById('success-container');
+            successContainer.innerHTML = '<div class="success-message">' + message + '</div>';
+        }
+
+        // 页面加载时检查 URL 参数并显示相应消息
+        document.addEventListener('DOMContentLoaded', function() {
+            const error = getUrlParameter('error');
+            const message = getUrlParameter('message');
+
+            if (error) {
+                let errorMessage = '登录失败';
+                switch (error) {
+                    case 'user-not-found':
+                        errorMessage = '❌ 用户不存在，请检查用户名是否正确。';
+                        break;
+                    case 'invalid-password':
+                        errorMessage = '❌ 密码错误，请重新输入。';
+                        break;
+                    case 'missing-fields':
+                        errorMessage = '❌ 请填写完整的用户名和密码。';
+                        break;
+                    case 'server-error':
+                        errorMessage = '❌ 服务器错误，请稍后重试。';
+                        break;
+                    case 'login-required':
+                        errorMessage = '⚠️ 请先登录才能访问该页面。';
+                        break;
+                }
+                showError(errorMessage);
+            }
+
+            if (message) {
+                let successMessage = '';
+                switch (message) {
+                    case 'logged-out':
+                        successMessage = '✅ 您已成功登出。';
+                        break;
+                    case 'password-changed-success':
+                        successMessage = '✅ 密码修改成功！请使用新密码重新登录。';
+                        break;
+                    case 'password-reset-success':
+                        successMessage = '✅ 密码重置成功！请使用新密码登录。';
+                        break;
+                }
+                if (successMessage) {
+                    showSuccess(successMessage);
+                }
+            }
+
+            // 处理登录表单提交
+            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                // 清除之前的错误和成功消息
+                document.getElementById('error-container').innerHTML = '';
+                document.getElementById('success-container').innerHTML = '';
+
+                if (!username || !password) {
+                    showError('❌ 请填写完整的用户名和密码。');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        })
+                    });
+
+                    if (response.ok) {
+                        // 登录成功，重定向到后台首页
+                        window.location.href = '/dashboard.html';
+                    } else {
+                        // 登录失败，尝试获取错误信息
+                        let errorMessage = '登录失败，请检查用户名和密码。';
+                        try {
+                            const data = await response.json();
+                            if (data.message) {
+                                errorMessage = data.message;
+                            }
+                        } catch (e) {
+                            // 如果响应不是 JSON，使用默认错误信息
+                            if (response.status === 401) {
+                                errorMessage = '用户名或密码错误。';
+                            } else if (response.status === 400) {
+                                errorMessage = '请填写完整的用户名和密码。';
+                            } else {
+                                errorMessage = '服务器错误，请稍后重试。';
+                            }
+                        }
+                        alert(errorMessage);
+                    }
+                } catch (error) {
+                    console.error('登录请求失败:', error);
+                    alert('网络错误，请检查连接后重试。');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

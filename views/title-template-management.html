@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批次详情标题模板管理 - 茶园管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 { 
+            color: #1976d2; 
+            font-size: 1.8rem; 
+            margin-bottom: 0.5rem; 
+        }
+        
+        .header .subtitle { 
+            color: #666; 
+            font-size: 0.9rem; 
+        }
+        
+        .nav-buttons { 
+            margin-top: 1rem; 
+            display: flex; 
+            gap: 1rem; 
+        }
+        
+        .nav-btn {
+            background: #6c757d; 
+            color: white; 
+            text-decoration: none;
+            padding: 0.5rem 1rem; 
+            border-radius: 5px; 
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-btn:hover { background: #5a6268; }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 2rem 4rem; 
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left: 4px solid #ff9800;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            color: #e65100;
+        }
+        
+        .info-box strong {
+            color: #f57c00;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .info-box ul {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+            line-height: 1.8;
+        }
+        
+        .template-card {
+            background: white; 
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden; 
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            color: white; 
+            padding: 1.5rem 2rem;
+            font-size: 1.3rem; 
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header .count-badge {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .card-body { 
+            padding: 2rem; 
+        }
+        
+        .template-item {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .template-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .template-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .template-input {
+            width: 100%;
+            padding: 0.9rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        .template-input:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        }
+        
+        .template-hint {
+            color: #999;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .save-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .save-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .save-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loading-overlay.show {
+            display: flex;
+        }
+        
+        .loading-spinner {
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1976d2;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: none;
+            align-items: center;
+            gap: 0.8rem;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert.show {
+            display: flex;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+        
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem 2rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .save-btn {
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载遮罩 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div>处理中，请稍候...</div>
+        </div>
+    </div>
+
+    <header class="header">
+        <h1>📝 批次详情标题模板管理</h1>
+        <p class="subtitle">为不同茶叶品类设置批次详情页的诗意标题，新增或编辑批次时自动填充</p>
+        <div class="nav-buttons">
+            <a href="/dashboard" class="nav-btn">📊 返回仪表板</a>
+            <a href="/admin/template-management" class="nav-btn">🏠 返回模板中心</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 提示信息 -->
+        <div class="info-box">
+            <strong>💡 使用说明</strong>
+            <ul>
+                <li>为每个茶叶品类设置专属的批次详情标题模板</li>
+                <li>在批次编辑页面选择品类时，对应的标题会自动填充</li>
+                <li>标题应简洁优雅，体现茶叶品类的特点和诗意</li>
+                <li>建议标题长度控制在 10-30 个字符之间</li>
+            </ul>
+        </div>
+
+        <!-- 全局提示 -->
+        <div id="alertBox" class="alert"></div>
+
+        <!-- 模板列表 -->
+        <div class="template-card">
+            <div class="card-header">
+                <span>品类标题模板列表</span>
+                <span id="templateCount" class="count-badge">加载中...</span>
+            </div>
+            <div class="card-body">
+                <div id="templateList">
+                    <!-- 模板列表将由 JavaScript 动态生成 -->
+                    <div class="empty-state">
+                        <div class="icon">⏳</div>
+                        <p>正在加载模板数据...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 保存按钮 -->
+        <div class="save-section">
+            <button id="saveBtn" class="save-btn" onclick="saveAllTemplates()">
+                💾 保存所有模板
+            </button>
+            <p class="template-hint" style="justify-content: center; margin-top: 1rem;">
+                💡 修改后请点击保存，更改会立即生效
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量：存储所有模板数据
+        let allTemplates = [];
+
+        const normalizeTemplate = (template) => ({
+            ...template,
+            categoryName: template.categoryName ?? template.category_name ?? '',
+            titleTemplate: template.titleTemplate ?? template.title_template ?? '',
+        });
+
+        // 页面加载时获取所有模板
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTemplates();
+        });
+
+        /**
+         * 从服务器加载所有标题模板
+         */
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/title-templates');
+                const result = await response.json();
+
+                if (result.success) {
+                    allTemplates = (result.data || []).map(normalizeTemplate);
+                    
+                    // 如果没有任何模板，初始化默认品类
+                    if (allTemplates.length === 0) {
+                        allTemplates = initializeDefaultTemplates();
+                    }
+                    
+                    renderTemplates();
+                } else {
+                    showAlert('error', '获取模板失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('加载模板时发生错误:', error);
+                showAlert('error', '加载模板失败，请检查网络连接');
+            }
+        }
+
+        /**
+         * 初始化默认品类模板（如果数据库中还没有数据）
+         */
+        function initializeDefaultTemplates() {
+            return [
+                { categoryName: '明前茶', category_name: '明前茶', titleTemplate: '春晓第一枝 明前独韵', title_template: '春晓第一枝 明前独韵' },
+                { categoryName: '雨前茶', category_name: '雨前茶', titleTemplate: '雨后春山翠 茶香满庭芳', title_template: '雨后春山翠 茶香满庭芳' },
+                { categoryName: '春茶', category_name: '春茶', titleTemplate: '春深似海 茶香满园', title_template: '春深似海 茶香满园' },
+                { categoryName: '夏茶', category_name: '夏茶', titleTemplate: '夏日浓荫 醇厚回甘', title_template: '夏日浓荫 醇厚回甘' },
+                { categoryName: '秋茶', category_name: '秋茶', titleTemplate: '金秋时节 甘醇温润', title_template: '金秋时节 甘醇温润' }
+            ];
+        }
+
+        /**
+         * 渲染模板列表到页面
+         */
+        function renderTemplates() {
+            const listContainer = document.getElementById('templateList');
+            const countBadge = document.getElementById('templateCount');
+            
+            // 更新计数
+            countBadge.textContent = `共 ${allTemplates.length} 个品类`;
+
+            // 如果没有模板，显示空状态
+            if (allTemplates.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📝</div>
+                        <p>暂无模板数据</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                            请先在"落地页管理"中添加茶叶品类
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 生成模板列表 HTML
+            let html = '';
+            allTemplates.forEach((template, index) => {
+                const categoryName = template.categoryName ?? template.category_name ?? '';
+                const titleTemplate = template.titleTemplate ?? template.title_template ?? '';
+                html += `
+                    <div class="template-item">
+                        <label class="template-label">
+                            <span class="category-badge">${categoryName}</span>
+                            <span>批次详情标题</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="template-input" 
+                            id="template-${index}"
+                            value="${titleTemplate || ''}"
+                            placeholder="请输入诗意的批次详情标题..."
+                            maxlength="200"
+                        >
+                        <p class="template-hint">
+                            💡 此标题将在创建或编辑"${categoryName}"批次时自动填充
+                        </p>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+        }
+
+        /**
+         * 保存所有模板到服务器
+         */
+        async function saveAllTemplates() {
+            const saveBtn = document.getElementById('saveBtn');
+            
+            // 收集所有输入框的数据
+            const updatedTemplates = allTemplates.map((template, index) => {
+                const inputElement = document.getElementById(`template-${index}`);
+                const categoryName = template.categoryName ?? template.category_name ?? '';
+                const titleValue = inputElement.value.trim();
+                return {
+                    category_name: categoryName,
+                    title_template: titleValue,
+                    categoryName,
+                    titleTemplate: titleValue
+                };
+            });
+
+            // 验证：确保所有模板都有标题
+            const emptyTemplates = updatedTemplates.filter(t => !t.title_template);
+            if (emptyTemplates.length > 0) {
+                showAlert('error', `请为所有品类填写标题（共 ${emptyTemplates.length} 个品类的标题为空）`);
+                return;
+            }
+
+            // 禁用按钮，显示加载状态
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/title-templates', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ templates: updatedTemplates })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', `✅ 成功保存 ${result.count} 个模板！`);
+                    // 重新加载模板数据
+                    await loadTemplates();
+                } else {
+                    showAlert('error', '保存失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('保存模板时发生错误:', error);
+                showAlert('error', '保存失败，请检查网络连接');
+            } finally {
+                // 恢复按钮状态
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 保存所有模板';
+                showLoading(false);
+            }
+        }
+
+        /**
+         * 显示全局提示信息
+         * @param {string} type - 'success' 或 'error'
+         * @param {string} message - 提示消息
+         */
+        function showAlert(type, message) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type} show`;
+            alertBox.textContent = message;
+
+            // 自动隐藏（5秒后）
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+            }, 5000);
+
+            // 滚动到顶部显示提示
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /**
+         * 显示/隐藏加载遮罩
+         * @param {boolean} show - 是否显示
+         */
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.add('show');
+            } else {
+                overlay.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>
+

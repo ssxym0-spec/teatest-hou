@@ -1,0 +1,2704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>落地页管理 - 后端登录系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* 茶文化色系 */
+            --tea-green: #6B8E23;
+            --tea-green-light: #8BAF3E;
+            --tea-green-dark: #556B2F;
+            --tea-brown: #8B7355;
+            --tea-cream: #F5F0E8;
+            --bg-light: #FAFAF8;
+            --border-color: #E5E3DA;
+            --text-dark: #2C2C2C;
+            --text-medium: #5A5A5A;
+            --text-light: #8A8A8A;
+            --white: #FFFFFF;
+            --success: #52C41A;
+            --error: #F5222D;
+            --warning: #FAAD14;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-light);
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        /* ========== Header ========== */
+        .header {
+            background: var(--white);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            margin-bottom: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            justify-self: start;
+        }
+
+        .header-center {
+            justify-self: center;
+        }
+
+        .header h1 {
+            color: var(--tea-green);
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .nav-btn {
+            background: var(--tea-green);
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-btn:hover {
+            background: var(--tea-green-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(107, 142, 35, 0.2);
+        }
+
+        /* ========== Tab Navigation ========== */
+        .tab-navigation {
+            background: var(--white);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0 2rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--text-medium);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            color: var(--tea-green);
+            background: var(--tea-cream);
+        }
+
+        .tab-btn.active {
+            color: var(--tea-green);
+            border-bottom-color: var(--tea-green);
+            font-weight: 600;
+        }
+
+        .tab-icon {
+            font-size: 1.1rem;
+        }
+
+        /* ========== Main Content ========== */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== Dual Panel Layout (左右双栏) ========== */
+        .dual-panel {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 140px);
+            background: var(--white);
+        }
+
+        /* 左侧列表面板 */
+        .left-panel {
+            background: var(--tea-cream);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            max-height: calc(100vh - 140px);
+        }
+
+        .panel-header {
+            padding: 1.5rem;
+            background: var(--white);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .panel-header h3 {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-primary {
+            background: var(--tea-green);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--tea-green-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(107, 142, 35, 0.2);
+        }
+
+        .btn-secondary {
+            background: var(--tea-brown);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #6D5A45;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #D4190B;
+            transform: translateY(-1px);
+        }
+
+        .btn-small {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        /* 列表项卡片 */
+        .list-items {
+            padding: 1rem;
+        }
+
+        .list-item {
+            background: var(--white);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .list-item:hover {
+            border-color: var(--tea-green-light);
+            box-shadow: 0 4px 12px rgba(107, 142, 35, 0.1);
+            transform: translateX(4px);
+        }
+
+        .list-item.active {
+            border-color: var(--tea-green);
+            background: linear-gradient(to right, #FAFFF5, var(--white));
+        }
+
+        .list-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+        }
+
+        .list-item-badge {
+            background: var(--tea-green);
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .list-item-meta {
+            color: var(--text-light);
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .list-item-preview {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .preview-image {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* 右侧编辑面板 */
+        .right-panel {
+            background: var(--white);
+            overflow-y: auto;
+            max-height: calc(100vh - 140px);
+        }
+
+        .editor-container {
+            padding: 2rem;
+            max-width: 900px;
+        }
+
+        .editor-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .editor-title {
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .editor-subtitle {
+            color: var(--text-medium);
+            font-size: 0.9rem;
+        }
+
+        .form-section {
+            background: var(--tea-cream);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--tea-green-dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--text-dark);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1.5px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            background: var(--white);
+            color: var(--text-dark);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--tea-green);
+            box-shadow: 0 0 0 3px rgba(107, 142, 35, 0.1);
+        }
+
+        .form-control:disabled,
+        .form-control[readonly] {
+            background: #F5F5F5;
+            color: var(--text-light);
+            cursor: not-allowed;
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .form-help {
+            color: var(--text-light);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        /* 图片管理区域 */
+        .image-manager {
+            background: var(--white);
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .image-manager:hover {
+            border-color: var(--tea-green);
+        }
+
+        .image-preview-large {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .image-placeholder {
+            width: 200px;
+            height: 150px;
+            margin: 0 auto 1rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            background: var(--tea-cream);
+        }
+
+        /* 轮播图列表 */
+        .carousel-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .carousel-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .carousel-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .carousel-item input {
+            flex: 1;
+            margin: 0;
+        }
+
+        /* 信息项编辑器 */
+        .info-item-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .info-item-editor {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .info-item-editor:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .info-item-row {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-item-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 底部操作栏 */
+        .editor-footer {
+            position: sticky;
+            bottom: 0;
+            background: var(--white);
+            border-top: 2px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            display: flex;
+            gap: 1rem;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        /* 单面板布局（用于背景图和页脚） */
+        .single-panel {
+            background: var(--white);
+            min-height: calc(100vh - 140px);
+        }
+
+        .single-panel-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* 状态提示 */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: #F6FFED;
+            border: 1px solid #B7EB8F;
+            color: #389E0D;
+        }
+
+        .alert-error {
+            background: #FFF1F0;
+            border: 1px solid #FFCCC7;
+            color: #CF1322;
+        }
+
+        .alert-loading {
+            background: #E6F7FF;
+            border: 1px solid #91D5FF;
+            color: #096DD9;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--tea-green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 社交链接列表 */
+        .social-link-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .social-platform {
+            min-width: 80px;
+            font-weight: 600;
+            color: var(--tea-green);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .dual-panel {
+                grid-template-columns: 280px 1fr;
+            }
+
+            .editor-container {
+                padding: 1.5rem;
+            }
+
+            .info-item-row {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Header 优化 */
+            .header {
+                padding: 1rem;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+                position: relative;
+            }
+
+            .header-left {
+                order: 2;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            .header-center {
+                order: 1;
+            }
+
+            .header h1 {
+                font-size: 1.25rem;
+                justify-content: center;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .nav-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+                text-align: center;
+            }
+
+            /* Tab 导航优化 */
+            .tab-navigation {
+                padding: 0 0.25rem;
+                gap: 0;
+                justify-content: space-between;
+                overflow-x: visible;
+            }
+
+            .tab-btn {
+                padding: 0.6rem 0.4rem;
+                font-size: 0.75rem;
+                flex: 1;
+                min-width: 0;
+                justify-content: center;
+                white-space: nowrap;
+                gap: 0.3rem;
+            }
+
+            .tab-icon {
+                font-size: 0.95rem;
+            }
+
+            /* Tab按钮文字换行处理 */
+            .tab-btn span:not(.tab-icon) {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* 中等手机屏幕优化 (375px-480px) */
+            @media (max-width: 480px) {
+                .tab-btn {
+                    padding: 0.55rem 0.3rem;
+                    font-size: 0.72rem;
+                }
+
+                .tab-icon {
+                    font-size: 0.9rem;
+                }
+            }
+
+            /* 双栏布局改为单栏 */
+            .dual-panel {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+
+            .left-panel {
+                max-height: 400px;
+                border-right: none;
+                border-bottom: 2px solid var(--border-color);
+            }
+
+            .right-panel {
+                max-height: none;
+            }
+
+            .panel-header {
+                padding: 1rem;
+            }
+
+            .panel-header h3 {
+                font-size: 1rem;
+            }
+
+            .list-items {
+                padding: 0.75rem;
+            }
+
+            .list-item {
+                padding: 0.75rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .list-item-title {
+                font-size: 0.9rem;
+            }
+
+            .list-item-meta {
+                font-size: 0.75rem;
+            }
+
+            /* 编辑器优化 */
+            .editor-container {
+                padding: 1rem;
+            }
+
+            .editor-header {
+                margin-bottom: 1.5rem;
+                padding-bottom: 0.75rem;
+            }
+
+            .editor-title {
+                font-size: 1.2rem;
+            }
+
+            .editor-subtitle {
+                font-size: 0.85rem;
+            }
+
+            /* 表单优化 */
+            .form-section {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .form-section-title {
+                font-size: 0.95rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            .form-label {
+                font-size: 0.85rem;
+                margin-bottom: 0.4rem;
+            }
+
+            .form-control {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            textarea.form-control {
+                min-height: 80px;
+            }
+
+            .form-help {
+                font-size: 0.75rem;
+            }
+
+            /* 信息项编辑器优化 */
+            .info-item-row {
+                grid-template-columns: 1fr !important;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .info-item-editor {
+                padding: 0.75rem;
+            }
+
+            /* 轮播图项优化 */
+            .carousel-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+
+            .carousel-item img {
+                width: 100%;
+                height: auto;
+                min-height: 120px;
+                max-height: 200px;
+                object-fit: cover;
+            }
+
+            .carousel-item input {
+                width: 100%;
+            }
+
+            .carousel-item button {
+                width: 100%;
+            }
+
+            /* 图片管理优化 */
+            .image-manager {
+                padding: 1rem;
+            }
+
+            .image-preview-large {
+                max-height: 200px;
+            }
+
+            .image-placeholder {
+                width: 100% !important;
+                height: 120px !important;
+                font-size: 0.85rem;
+            }
+
+            /* 底部操作栏优化 */
+            .editor-footer {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.75rem;
+                position: relative;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                padding: 0.7rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .btn-small {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            /* 单面板内容优化 */
+            .single-panel-content {
+                padding: 1rem;
+            }
+
+            /* 网格布局优化 */
+            .preview-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            /* 社交链接优化 */
+            .social-link-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+
+            .social-platform {
+                min-width: auto;
+                font-size: 0.9rem;
+            }
+
+            /* 详细信息表单网格优化 */
+            .form-section > div[style*="grid-template-columns: 1fr 1fr"] {
+                display: block !important;
+            }
+
+            .form-section > div[style*="grid-template-columns: 1fr 1fr"] > .form-group {
+                margin-bottom: 1rem;
+            }
+
+            /* 添加新链接表单优化 */
+            div[style*="grid-template-columns: 1fr 2fr auto"] {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+            }
+
+            div[style*="grid-template-columns: 1fr 2fr auto"] > div {
+                width: 100%;
+            }
+
+            /* Alert 提示优化 */
+            .alert {
+                padding: 0.75rem 1rem;
+                font-size: 0.85rem;
+                margin-bottom: 1rem;
+            }
+
+            /* 空状态优化 */
+            .empty-state {
+                padding: 2rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .empty-state-icon {
+                font-size: 2.5rem;
+            }
+
+            /* 预览卡片优化 */
+            .preview-card {
+                padding: 1rem;
+                margin-top: 0.75rem;
+            }
+
+            .preview-card-title {
+                font-size: 0.95rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .preview-item {
+                padding: 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            /* 动作按钮组优化 */
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+            }
+
+            /* 固定定位元素优化 */
+            body > .alert {
+                left: 10px !important;
+                right: 10px !important;
+                top: 10px !important;
+                max-width: calc(100% - 20px) !important;
+            }
+        }
+
+        /* 超小屏幕优化 (360px以下) */
+        @media (max-width: 360px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+
+            .tab-navigation {
+                padding: 0 0.15rem;
+            }
+
+            .tab-btn {
+                padding: 0.5rem 0.25rem;
+                font-size: 0.7rem;
+                gap: 0.2rem;
+            }
+
+            .tab-icon {
+                font-size: 0.85rem;
+            }
+
+            .editor-title {
+                font-size: 1.1rem;
+            }
+
+            .form-control {
+                font-size: 0.8rem;
+            }
+
+            .btn {
+                font-size: 0.85rem;
+                padding: 0.6rem 0.75rem;
+            }
+
+            .list-item {
+                padding: 0.6rem;
+            }
+
+            .form-section {
+                padding: 0.75rem;
+            }
+        }
+
+        /* 工具提示 */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            background-color: var(--text-dark);
+            color: white;
+                text-align: center;
+            padding: 0.5rem;
+            border-radius: 4px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* 预览卡片 */
+        .preview-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .preview-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .preview-item {
+            background: var(--tea-cream);
+            padding: 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .preview-item strong {
+            color: var(--tea-green-dark);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        /* 隐藏文件输入 */
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="nav-buttons">
+                <a href="/dashboard" class="nav-btn">← 返回仪表板</a>
+                <a href="/" class="nav-btn">🏠 返回首页</a>
+            </div>
+        </div>
+        <div class="header-center">
+            <h1>
+                <span>🍃</span>
+                <span>落地页管理中心</span>
+            </h1>
+        </div>
+        <div></div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('plots')">
+            <span class="tab-icon">🏞️</span>
+            <span>地块信息</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('categories')">
+            <span class="tab-icon">🍃</span>
+            <span>品类管理</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('background')">
+            <span class="tab-icon">🎨</span>
+            <span>背景图设置</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('footer')">
+            <span class="tab-icon">📄</span>
+            <span>页脚设置</span>
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Tab 1: 地块信息管理 -->
+        <div id="tab-plots" class="tab-content active">
+            <div class="dual-panel">
+                <!-- 左侧列表 -->
+                <div class="left-panel">
+                    <div class="panel-header">
+                        <h3>📋 地块列表</h3>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-small" onclick="createNewPlot()">
+                                ➕ 新建地块
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="loadPlots()">
+                                🔄 刷新
+                        </button>
+                    </div>
+                </div>
+                    <div id="plots-list" class="list-items">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🌱</div>
+                            <div>正在加载地块信息...</div>
+                        </div>
+                        </div>
+                    </div>
+
+                <!-- 右侧编辑器 -->
+                <div class="right-panel">
+                    <div id="plot-editor-empty" class="empty-state" style="padding: 4rem 2rem;">
+                        <div class="empty-state-icon">🏞️</div>
+                        <div style="font-size: 1.1rem; color: var(--text-medium); margin-bottom: 0.5rem;">
+                            选择或创建一个地块开始编辑
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-light);">
+                            在左侧列表中点击地块，或点击"新建地块"按钮
+                        </div>
+                    </div>
+
+                    <div id="plot-editor-content" style="display: none;">
+                        <div class="editor-container">
+                            <div class="editor-header">
+                                <div class="editor-title" id="plot-editor-title">编辑地块</div>
+                                <div class="editor-subtitle">管理地块的基本信息、轮播图片和核心属性</div>
+                            </div>
+
+                            <!-- 基本信息 -->
+                            <div class="form-section">
+                                <div class="form-section-title">📝 基本信息</div>
+                        <div class="form-group">
+                                    <label class="form-label">地块名称</label>
+                                    <input type="text" id="plot-name" class="form-control" placeholder="例：龙井茶园A区">
+                                </div>
+                        </div>
+
+                        <!-- 轮播图管理 -->
+                            <div class="form-section">
+                                <div class="form-section-title">🖼️ 轮播图管理</div>
+                                <div id="carousel-list" class="carousel-list">
+                                    <!-- 动态生成 -->
+                                </div>
+                                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button class="btn btn-secondary btn-small" onclick="addNewCarouselImage()">
+                                        📷 添加图片
+                                    </button>
+                                    <button class="btn btn-secondary btn-small" onclick="capturePhoto()">
+                                        📸 拍照上传
+                                    </button>
+                            </div>
+                        </div>
+
+                        <!-- 核心信息管理 -->
+                            <div class="form-section">
+                                <div class="form-section-title">ℹ️ 核心信息</div>
+                                <div id="info-list" class="info-item-list">
+                                    <!-- 动态生成 -->
+                                </div>
+                                <div style="margin-top: 1rem;">
+                                    <button class="btn btn-secondary btn-small" onclick="addInfoItem()">
+                                        ➕ 添加信息项
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 底部操作栏 -->
+                        <div class="editor-footer">
+                            <button class="btn btn-primary" onclick="savePlotChanges()">
+                                💾 保存所有更改
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetPlotEditor()">
+                                🔄 重置
+                            </button>
+                            <button class="btn btn-danger" onclick="deletePlot()">
+                                🗑️ 删除地块
+                            </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+            <!-- 隐藏的文件输入 -->
+            <input type="file" id="plot-file-input" accept="image/*">
+            <input type="file" id="plot-camera-input" accept="image/*" capture="environment">
+        </div>
+
+        <!-- Tab 2: 品类管理 -->
+        <div id="tab-categories" class="tab-content">
+            <div class="dual-panel">
+                <!-- 左侧列表 -->
+                <div class="left-panel">
+                    <div class="panel-header">
+                        <h3>🍃 品类列表</h3>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-small" onclick="createNewCategory()">
+                                ➕ 新建品类
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="loadCategories()">
+                                🔄 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div id="categories-list" class="list-items">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🌱</div>
+                            <div>正在加载品类信息...</div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- 右侧编辑器 -->
+                <div class="right-panel">
+                    <div id="category-editor-empty" class="empty-state" style="padding: 4rem 2rem;">
+                        <div class="empty-state-icon">🍃</div>
+                        <div style="font-size: 1.1rem; color: var(--text-medium); margin-bottom: 0.5rem;">
+                            选择或创建一个品类开始编辑
+                    </div>
+                        <div style="font-size: 0.9rem; color: var(--text-light);">
+                            在左侧列表中点击品类，或点击"新建品类"按钮
+                </div>
+                        </div>
+
+                    <div id="category-editor-content" style="display: none;">
+                        <div class="editor-container">
+                            <div class="editor-header">
+                                <div class="editor-title" id="category-editor-title">编辑品类</div>
+                                <div class="editor-subtitle">管理茶叶品类的详细信息</div>
+                    </div>
+
+                            <!-- 基本信息 -->
+                            <div class="form-section">
+                                <div class="form-section-title">📝 基本信息</div>
+                        <div class="form-group">
+                                    <label class="form-label">品类名称</label>
+                                    <input type="text" id="category-name" class="form-control" placeholder="例：西湖龙井">
+                        </div>
+                        <div class="form-group">
+                                    <label class="form-label">核心描述</label>
+                                    <textarea id="category-description" class="form-control" rows="4" placeholder="请输入品类的核心描述文案..."></textarea>
+                                    </div>
+                                    </div>
+
+                            <!-- 品类图片 -->
+                            <div class="form-section">
+                                <div class="form-section-title">🖼️ 品类图片</div>
+                                <div class="image-manager">
+                                    <div id="category-image-preview">
+                                        <div class="image-placeholder">暂无图片</div>
+                                    </div>
+                                    <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                                        <button class="btn btn-secondary btn-small" onclick="replaceCategoryImage()">
+                                            📷 上传图片
+                                        </button>
+                                        <button class="btn btn-secondary btn-small" onclick="captureCategoryPhoto()">
+                                            📸 拍照
+                                        </button>
+                                        <button class="btn btn-danger btn-small" onclick="removeCategoryImage()" id="remove-category-image-btn" style="display: none;">
+                                            🗑️ 删除
+                                        </button>
+                                </div>
+                            </div>
+                        </div>
+
+                            <!-- 详细信息 -->
+                            <div class="form-section">
+                                <div class="form-section-title">📊 详细信息</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                                        <label class="form-label">采摘期</label>
+                                        <input type="text" id="category-picking" class="form-control" placeholder="例：3月中旬-4月上旬">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">产量占比 (%)</label>
+                                        <input type="number" id="category-yield" class="form-control" min="0" max="100" step="0.1" placeholder="25.5">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">显示顺序</label>
+                                    <input type="number" id="category-sort-order" class="form-control" min="0" step="1" placeholder="数字越小越靠前">
+                                    <div class="form-help">💡 提示：明前茶=1，雨前茶=2，春茶=3...</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">图片URL（系统生成）</label>
+                                    <input type="text" id="category-image-url" class="form-control" readonly>
+                                </div>
+                                </div>
+                            </div>
+
+                        <!-- 底部操作栏 -->
+                        <div class="editor-footer">
+                            <button class="btn btn-primary" onclick="saveCategoryChanges()">
+                                💾 保存所有更改
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetCategoryEditor()">
+                                🔄 重置
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteCategory()">
+                                🗑️ 删除品类
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+            <!-- 隐藏的文件输入 -->
+            <input type="file" id="category-file-input" accept="image/*">
+            <input type="file" id="category-camera-input" accept="image/*" capture="environment">
+            </div>
+
+        <!-- Tab 3: 云养茶园背景图 -->
+        <div id="tab-background" class="tab-content">
+            <div class="single-panel">
+                <div class="single-panel-content">
+                    <div class="editor-header">
+                        <div class="editor-title">🎨 云养茶园背景图设置</div>
+                        <div class="editor-subtitle">管理CTA区域的背景图片</div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">🖼️ 背景图片</div>
+                        <div class="image-manager">
+                            <div id="cta-background-preview">
+                                <div class="image-placeholder" style="width: 100%; height: 200px;">暂无背景图</div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
+                                <button class="btn btn-secondary" onclick="replaceCtaBackground()">
+                                    📷 上传背景图
+                                </button>
+                                <button class="btn btn-secondary" onclick="captureCtaBackground()">
+                                    📸 拍照上传
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteCtaBackground()" id="delete-cta-bg-btn" style="display: none;">
+                                    🗑️ 删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">ℹ️ 图片信息</div>
+                    <div class="form-group">
+                            <label class="form-label">图片描述</label>
+                        <input type="text" id="setting-description" class="form-control" placeholder="例：美丽的茶园风光">
+                            <div class="form-help">💡 建议尺寸：1920x1080px，格式：JPG/PNG</div>
+                    </div>
+                    <div class="form-group">
+                            <label class="form-label">图片URL（系统生成）</label>
+                            <input type="text" id="cta-background" class="form-control" readonly>
+                    </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button class="btn btn-primary" onclick="saveCtaBackground()">
+                            💾 保存设置
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetCtaBackground()">
+                            🔄 重置更改
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 隐藏的文件输入 -->
+            <input type="file" id="cta-file-input" accept="image/*">
+            <input type="file" id="cta-camera-input" accept="image/*" capture="environment">
+                    </div>
+
+        <!-- Tab 4: 页脚设置 -->
+        <div id="tab-footer" class="tab-content">
+            <div class="single-panel">
+                <div class="single-panel-content">
+                    <div class="editor-header">
+                        <div class="editor-title">📄 页脚内容统一管理</div>
+                        <div class="editor-subtitle">管理网站页脚的Logo、版权信息和社交链接</div>
+                </div>
+
+                    <!-- Logo管理 -->
+                    <div class="form-section">
+                        <div class="form-section-title">🏷️ 页脚Logo</div>
+                        <div class="image-manager">
+                                <div id="footer-logo-preview">
+                                <div class="image-placeholder" style="width: 200px; height: 100px;">暂无Logo</div>
+                                </div>
+                            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
+                                <button class="btn btn-secondary" onclick="uploadFooterLogo()">
+                                    📷 上传Logo
+                                </button>
+                                <button class="btn btn-secondary" onclick="captureFooterLogo()">
+                                    📸 拍照上传
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteFooterLogo()" id="delete-footer-logo-btn" style="display: none;">
+                                    🗑️ 删除
+                                </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- 基本信息 -->
+                    <div class="form-section">
+                        <div class="form-section-title">📝 基本信息</div>
+                        <div class="form-group">
+                            <label class="form-label">茶园名称</label>
+                            <input type="text" id="footer-garden-name" class="form-control" placeholder="例：龙井茶园">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">版权信息</label>
+                            <input type="text" id="footer-copyright" class="form-control" placeholder="例：© 2024 龙井茶园. All rights reserved.">
+                        </div>
+                        </div>
+
+                    <!-- 社交链接 -->
+                    <div class="form-section">
+                        <div class="form-section-title">🔗 社交媒体链接</div>
+                        <div id="footer-social-links-list" class="info-item-list">
+                            <div class="empty-state" style="padding: 2rem;">暂无社交链接</div>
+                                </div>
+                                
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                            <label class="form-label" style="margin-bottom: 0.75rem;">添加新链接</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 0.5rem; align-items: end;">
+                                        <div>
+                                            <select id="footer-new-platform" class="form-control">
+                                                <option value="">选择平台...</option>
+                                                <option value="weibo">微博</option>
+                                                <option value="xiaohongshu">小红书</option>
+                                                <option value="douyin">抖音</option>
+                                                <option value="wechat">微信</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <input type="url" id="footer-new-url" class="form-control" placeholder="https://...">
+                                        </div>
+                                        <div>
+                                    <button class="btn btn-primary" onclick="addFooterSocialLink()">➕ 添加</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--tea-green);">
+                        <button class="btn btn-primary" style="font-size: 1rem; padding: 0.75rem 2rem;" onclick="saveAllFooterSettings()">
+                                💾 保存所有页脚设置
+                            </button>
+                        <button class="btn btn-secondary" onclick="loadFooterSettings()">
+                            🔄 重置更改
+                        </button>
+                        </div>
+
+                    <!-- 预览区域 -->
+                    <div id="footer-preview" class="preview-card" style="display: none;">
+                        <div class="preview-card-title">👁️ 当前设置预览</div>
+                        <div id="footer-preview-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 隐藏的文件输入 -->
+            <input type="file" id="footer-logo-file-input" accept="image/*">
+            <input type="file" id="footer-logo-camera-input" accept="image/*" capture="environment">
+            <input type="hidden" id="footer-logo-url">
+        </div>
+    </main>
+
+    <script>
+        // ==================== 全局变量 ====================
+        
+        // 地块管理
+        let currentPlots = [];
+        let currentSelectedPlotId = '';
+        let currentCarouselImages = [];
+        let currentInfoItems = [];
+
+        // 品类管理
+        let currentCategories = [];
+        let currentSelectedCategoryId = '';
+        let currentCategoryImageUrl = '';
+
+        // 背景图管理
+        let currentCtaBackgroundUrl = '';
+        let currentCtaDescription = '';
+
+        // 页脚管理
+        let currentFooterData = {
+            logoUrl: '',
+            gardenName: '',
+            copyrightText: '',
+            socialLinks: []
+        };
+
+        // 平台名称映射
+        const platformNames = {
+            'weibo': '微博',
+            'xiaohongshu': '小红书',
+            'douyin': '抖音',
+            'wechat': '微信'
+        };
+
+        function normalizeLandingCategory(category = {}) {
+            const normalizedId = category._id ?? category.id ?? category.category_id ?? category.categoryId ?? null;
+            const normalizedImageUrl = category.image_url ?? category.imageUrl ?? '';
+            const normalizedPickingPeriod = category.picking_period ?? category.pickingPeriod ?? '';
+            const normalizedYield = category.yield_percentage ?? category.yieldPercentage ?? 0;
+            const normalizedSortOrder = category.sort_order ?? category.sortOrder ?? 999;
+            const normalizedPickingStart = category.picking_start_date ?? category.pickingStartDate ?? null;
+            const normalizedPickingEnd = category.picking_end_date ?? category.pickingEndDate ?? null;
+
+            return {
+                ...category,
+                _id: normalizedId,
+                id: normalizedId,
+                image_url: normalizedImageUrl,
+                imageUrl: normalizedImageUrl,
+                picking_period: normalizedPickingPeriod,
+                pickingPeriod: normalizedPickingPeriod,
+                yield_percentage: typeof normalizedYield === 'number'
+                    ? normalizedYield
+                    : parseFloat(normalizedYield) || 0,
+                yieldPercentage: typeof normalizedYield === 'number'
+                    ? normalizedYield
+                    : parseFloat(normalizedYield) || 0,
+                sort_order: typeof normalizedSortOrder === 'number'
+                    ? normalizedSortOrder
+                    : parseInt(normalizedSortOrder) || 999,
+                sortOrder: typeof normalizedSortOrder === 'number'
+                    ? normalizedSortOrder
+                    : parseInt(normalizedSortOrder) || 999,
+                picking_start_date: normalizedPickingStart,
+                pickingStartDate: normalizedPickingStart,
+                picking_end_date: normalizedPickingEnd,
+                pickingEndDate: normalizedPickingEnd,
+                description: category.description ?? '',
+                name: category.name ?? ''
+            };
+        }
+
+        function normalizeLandingCategories(categories = []) {
+            return categories.map(normalizeLandingCategory);
+        }
+
+        // ==================== 页面初始化 ====================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ 落地页管理系统初始化中...');
+            
+            // 加载所有数据
+            loadPlots();
+            loadCategories();
+            loadSettings();
+            loadFooterSettings();
+            
+            // 初始化文件输入事件
+            initFileInputs();
+            
+            console.log('✅ 系统初始化完成');
+        });
+
+        // ==================== Tab切换 ====================
+        
+        function switchTab(tabName) {
+            // 隐藏所有tab内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有tab按钮的active状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 显示选中的tab
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            // 激活对应的按钮
+            event.target.closest('.tab-btn').classList.add('active');
+            
+            console.log(`🔄 切换到标签页: ${tabName}`);
+        }
+
+        // ==================== 地块管理函数 ====================
+        
+        async function loadPlots() {
+            try {
+                showLoadingInList('plots-list', '正在加载地块信息...');
+                
+                const response = await fetch('/api/plots');
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentPlots = result.data;
+                    displayPlotsList(currentPlots);
+                    console.log(`✅ 成功加载 ${currentPlots.length} 个地块`);
+                } else {
+                    showErrorInList('plots-list', '加载地块数据失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('加载地块数据时发生错误:', error);
+                showErrorInList('plots-list', '加载地块数据失败: ' + error.message);
+            }
+        }
+
+        function displayPlotsList(plots) {
+            const container = document.getElementById('plots-list');
+            
+            if (plots.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>暂无地块数据</div>
+                        <div style="font-size: 0.85rem; margin-top: 0.5rem;">点击"新建地块"开始创建</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = plots.map(plot => `
+                <div class="list-item ${plot._id === currentSelectedPlotId ? 'active' : ''}" 
+                     onclick="selectPlot('${plot._id}')">
+                    <div class="list-item-header">
+                        <div class="list-item-title">${plot.name}</div>
+                        <div class="list-item-badge">${plot.carousel_images.length}</div>
+                    </div>
+                    <div class="list-item-meta">
+                        <div>📷 ${plot.carousel_images.length} 张轮播图</div>
+                        <div>ℹ️ ${plot.info_list.length} 个信息项</div>
+                    </div>
+                    ${plot.carousel_images.length > 0 ? `
+                        <div class="list-item-preview">
+                            ${plot.carousel_images.slice(0, 4).map(img => 
+                                `<img src="${img}" class="preview-image" alt="预览" onerror="this.style.display='none'">`
+                            ).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function selectPlot(plotId) {
+            const plot = currentPlots.find(p => p._id === plotId);
+            if (!plot) return;
+
+            currentSelectedPlotId = plotId;
+            currentCarouselImages = [...plot.carousel_images];
+            currentInfoItems = plot.info_list.map(item => ({
+                icon: item.icon || '',
+                label: item.label || '',
+                value: item.value || '',
+                sub_value: item.sub_value || ''
+            }));
+
+            // 显示编辑器
+            document.getElementById('plot-editor-empty').style.display = 'none';
+            document.getElementById('plot-editor-content').style.display = 'block';
+
+            // 更新标题和表单
+            document.getElementById('plot-editor-title').textContent = `编辑地块：${plot.name}`;
+            document.getElementById('plot-name').value = plot.name;
+
+            // 渲染轮播图和信息项
+            renderCarouselImages();
+            renderInfoItems();
+            
+            // 更新列表高亮
+            displayPlotsList(currentPlots);
+            
+            console.log(`✅ 已选择地块: ${plot.name}`);
+        }
+
+        function renderCarouselImages() {
+            const container = document.getElementById('carousel-list');
+            
+            if (currentCarouselImages.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">暂无轮播图片，点击下方按钮添加</div>';
+                return;
+            }
+
+            container.innerHTML = currentCarouselImages.map((imageUrl, index) => `
+                <div class="carousel-item">
+                    <img src="${imageUrl}" alt="轮播图 ${index + 1}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0MFY0MEgyMFYyMFoiIGZpbGw9IiNEMUQ1REIiLz4KPC9zdmc+Cg=='">
+                    <input type="text" class="form-control" value="${imageUrl}" readonly>
+                    <button class="btn btn-secondary btn-small" onclick="replaceCarouselImage(${index})">替换</button>
+                    <button class="btn btn-danger btn-small" onclick="removeCarouselImage(${index})">删除</button>
+                </div>
+            `).join('');
+        }
+
+        function renderInfoItems() {
+            const container = document.getElementById('info-list');
+            
+            if (currentInfoItems.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">暂无信息项，点击下方按钮添加</div>';
+                return;
+            }
+
+            container.innerHTML = currentInfoItems.map((item, index) => `
+                <div class="info-item-editor">
+                    <div class="info-item-row">
+                        <input type="text" class="form-control" value="${item.icon || ''}" 
+                                   onchange="updateInfoItem(${index}, 'icon', this.value)" 
+                               placeholder="图标">
+                        <input type="text" class="form-control" value="${item.label || ''}" 
+                                   onchange="updateInfoItem(${index}, 'label', this.value)" 
+                               placeholder="标签">
+                        </div>
+                    <div class="info-item-row" style="grid-template-columns: 1fr;">
+                        <input type="text" class="form-control" value="${item.value || ''}" 
+                               onchange="updateInfoItem(${index}, 'value', this.value)" 
+                               placeholder="值">
+                    </div>
+                    <div class="info-item-row" style="grid-template-columns: 1fr;">
+                        <input type="text" class="form-control" value="${item.sub_value || ''}" 
+                               onchange="updateInfoItem(${index}, 'sub_value', this.value)" 
+                               placeholder="副值（可选）">
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeInfoItem(${index})" style="width: 100%; margin-top: 0.5rem;">
+                        🗑️ 删除
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addNewCarouselImage() {
+            document.getElementById('plot-file-input').click();
+        }
+
+        function capturePhoto() {
+            document.getElementById('plot-camera-input').click();
+        }
+
+        function replaceCarouselImage(index) {
+            const fileInput = document.getElementById('plot-file-input');
+            fileInput.onchange = function(e) {
+                if (e.target.files.length > 0) {
+                    uploadPlotImage(e.target.files[0], index);
+                }
+                fileInput.onchange = null;
+            };
+            fileInput.click();
+        }
+
+        function removeCarouselImage(index) {
+            if (confirm('确定要删除这张图片吗？')) {
+                currentCarouselImages.splice(index, 1);
+                renderCarouselImages();
+            }
+        }
+
+        async function uploadPlotImage(file, index = null) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const imageUrl = result.data.fullUrl;
+                    
+                    if (index !== null) {
+                        currentCarouselImages[index] = imageUrl;
+                    } else {
+                        currentCarouselImages.push(imageUrl);
+                    }
+                    
+                    renderCarouselImages();
+                    showSuccessAlert('图片上传成功！');
+                } else {
+                    showErrorAlert('图片上传失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('上传图片时发生错误:', error);
+                showErrorAlert('图片上传失败: ' + error.message);
+            }
+        }
+
+        function addInfoItem() {
+            currentInfoItems.push({
+                icon: '',
+                label: '',
+                value: '',
+                sub_value: ''
+            });
+            renderInfoItems();
+        }
+
+        function updateInfoItem(index, field, value) {
+            if (currentInfoItems[index]) {
+                currentInfoItems[index][field] = value;
+            }
+        }
+
+        function removeInfoItem(index) {
+            if (confirm('确定要删除这个信息项吗？')) {
+                currentInfoItems.splice(index, 1);
+                renderInfoItems();
+            }
+        }
+
+        async function savePlotChanges() {
+            if (!currentSelectedPlotId) {
+                alert('请先选择要编辑的地块');
+                return;
+            }
+
+            const name = document.getElementById('plot-name').value.trim();
+            if (!name) {
+                alert('地块名称不能为空');
+                return;
+            }
+
+            try {
+                // 保存轮播图
+                await fetch(`/api/plots/${currentSelectedPlotId}/carousel`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ carousel_images: currentCarouselImages })
+                });
+
+                // 保存核心信息
+                const completeInfoList = currentInfoItems.filter(item => {
+                    return item.icon || item.label || item.value || item.sub_value;
+                });
+
+                await fetch(`/api/plots/${currentSelectedPlotId}/info`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ info_list: completeInfoList })
+                });
+
+                showSuccessAlert('地块信息保存成功！');
+                await loadPlots();
+                selectPlot(currentSelectedPlotId);
+            } catch (error) {
+                console.error('保存地块信息时发生错误:', error);
+                showErrorAlert('保存失败: ' + error.message);
+            }
+        }
+
+        function resetPlotEditor() {
+            if (confirm('确定要重置所有更改吗？未保存的修改将丢失。')) {
+                if (currentSelectedPlotId) {
+                    selectPlot(currentSelectedPlotId);
+                }
+            }
+        }
+
+        async function createNewPlot() {
+            const name = prompt('请输入新地块的名称:');
+            if (!name || !name.trim()) return;
+
+            try {
+                const response = await fetch('/api/plots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name.trim(),
+                        carousel_images: [],
+                        info_list: []
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessAlert('新地块创建成功！');
+                    await loadPlots();
+                    selectPlot(result.data._id);
+                } else {
+                    showErrorAlert('创建地块失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('创建地块时发生错误:', error);
+                showErrorAlert('创建地块失败: ' + error.message);
+            }
+        }
+
+        async function deletePlot() {
+            if (!currentSelectedPlotId) {
+                alert('请先选择要删除的地块');
+                return;
+            }
+
+            const plot = currentPlots.find(p => p._id === currentSelectedPlotId);
+            if (!confirm(`确定要删除地块"${plot.name}"吗？此操作不可撤销。`)) return;
+
+            try {
+                const response = await fetch(`/api/plots/${currentSelectedPlotId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessAlert('地块删除成功！');
+                    document.getElementById('plot-editor-content').style.display = 'none';
+                    document.getElementById('plot-editor-empty').style.display = 'block';
+                    currentSelectedPlotId = '';
+                    await loadPlots();
+                } else {
+                    showErrorAlert('删除地块失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('删除地块时发生错误:', error);
+                showErrorAlert('删除地块失败: ' + error.message);
+            }
+        }
+
+        // ==================== 品类管理函数 ====================
+        
+        async function loadCategories() {
+            try {
+                showLoadingInList('categories-list', '正在加载品类信息...');
+                
+                const response = await fetch('/api/categories');
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentCategories = normalizeLandingCategories(result.data || []);
+                    displayCategoriesList(currentCategories);
+                    console.log(`✅ 成功加载 ${currentCategories.length} 个品类`);
+                } else {
+                    showErrorInList('categories-list', '加载品类数据失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('加载品类数据时发生错误:', error);
+                showErrorInList('categories-list', '加载品类数据失败: ' + error.message);
+            }
+        }
+
+        function displayCategoriesList(categories) {
+            const container = document.getElementById('categories-list');
+            
+            if (categories.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>暂无品类数据</div>
+                        <div style="font-size: 0.85rem; margin-top: 0.5rem;">点击"新建品类"开始创建</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = categories.map(category => `
+                <div class="list-item ${category._id === currentSelectedCategoryId ? 'active' : ''}" 
+                     onclick="selectCategory('${category._id}')">
+                    <div class="list-item-header">
+                        <div class="list-item-title">${category.name}</div>
+                        ${category.yield_percentage ? `<div class="list-item-badge">${category.yield_percentage}%</div>` : ''}
+                    </div>
+                    <div class="list-item-meta">
+                        <div>${category.picking_period || '采摘期未设定'}</div>
+                        <div>${category.description ? category.description.substring(0, 30) + '...' : '暂无描述'}</div>
+                    </div>
+                    ${category.image_url ? `
+                        <div class="list-item-preview">
+                            <img src="${category.image_url}" class="preview-image" alt="${category.name}" 
+                                 style="width: 100%; height: 80px; object-fit: cover; border-radius: 4px;" 
+                                 onerror="this.style.display='none'">
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function selectCategory(categoryId) {
+            const category = currentCategories.find(c => c._id === categoryId);
+            if (!category) return;
+
+            currentSelectedCategoryId = categoryId;
+            currentCategoryImageUrl = category.image_url || '';
+
+            // 显示编辑器
+            document.getElementById('category-editor-empty').style.display = 'none';
+            document.getElementById('category-editor-content').style.display = 'block';
+
+            // 更新标题和表单
+            document.getElementById('category-editor-title').textContent = `编辑品类：${category.name}`;
+            document.getElementById('category-name').value = category.name;
+            document.getElementById('category-description').value = category.description || '';
+            document.getElementById('category-yield').value = category.yield_percentage || 0;
+            document.getElementById('category-picking').value = category.picking_period || '';
+            document.getElementById('category-sort-order').value = category.sort_order || 999;
+            document.getElementById('category-image-url').value = category.image_url || '';
+
+            // 更新图片预览
+            updateCategoryImagePreview();
+            
+            // 更新列表高亮
+            displayCategoriesList(currentCategories);
+            
+            console.log(`✅ 已选择品类: ${category.name}`);
+        }
+
+        function updateCategoryImagePreview() {
+            const container = document.getElementById('category-image-preview');
+            const removeBtn = document.getElementById('remove-category-image-btn');
+            
+            if (currentCategoryImageUrl) {
+                container.innerHTML = `
+                    <img src="${currentCategoryImageUrl}" class="image-preview-large" alt="品类图片" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="image-placeholder" style="display: none;">图片加载失败</div>
+                `;
+                removeBtn.style.display = 'inline-flex';
+            } else {
+                container.innerHTML = '<div class="image-placeholder">暂无图片</div>';
+                removeBtn.style.display = 'none';
+            }
+        }
+
+        function replaceCategoryImage() {
+            document.getElementById('category-file-input').click();
+        }
+
+        function captureCategoryPhoto() {
+            document.getElementById('category-camera-input').click();
+        }
+
+        function removeCategoryImage() {
+            if (confirm('确定要删除这张图片吗？')) {
+                currentCategoryImageUrl = '';
+                document.getElementById('category-image-url').value = '';
+                updateCategoryImagePreview();
+            }
+        }
+
+        async function uploadCategoryImage(file) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentCategoryImageUrl = result.data.fullUrl;
+                    document.getElementById('category-image-url').value = currentCategoryImageUrl;
+                    updateCategoryImagePreview();
+                    showSuccessAlert('图片上传成功！');
+                } else {
+                    showErrorAlert('图片上传失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('上传品类图片时发生错误:', error);
+                showErrorAlert('图片上传失败: ' + error.message);
+            }
+        }
+
+        async function saveCategoryChanges() {
+            if (!currentSelectedCategoryId) {
+                alert('请先选择要编辑的品类');
+                return;
+            }
+
+            const name = document.getElementById('category-name').value.trim();
+            if (!name) {
+                alert('品类名称不能为空');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/categories/${currentSelectedCategoryId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        image_url: currentCategoryImageUrl || '',
+                        description: document.getElementById('category-description').value.trim(),
+                        yield_percentage: parseFloat(document.getElementById('category-yield').value) || 0,
+                        picking_period: document.getElementById('category-picking').value.trim(),
+                        sort_order: parseInt(document.getElementById('category-sort-order').value) || 999
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessAlert(`品类"${name}"更新成功！`);
+                    await loadCategories();
+                    selectCategory(currentSelectedCategoryId);
+                } else {
+                    showErrorAlert('更新品类失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('保存品类更改时发生错误:', error);
+                showErrorAlert('保存品类更改失败: ' + error.message);
+            }
+        }
+
+        function resetCategoryEditor() {
+            if (confirm('确定要重置所有更改吗？未保存的修改将丢失。')) {
+                if (currentSelectedCategoryId) {
+                    selectCategory(currentSelectedCategoryId);
+                }
+            }
+        }
+
+        async function createNewCategory() {
+            const name = prompt('请输入新品类的名称:');
+            if (!name || !name.trim()) return;
+
+            try {
+                const response = await fetch('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name.trim(),
+                        image_url: '',
+                        description: '',
+                        yield_percentage: 0,
+                        picking_period: '',
+                        sort_order: 999
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessAlert('新品类创建成功！');
+                    await loadCategories();
+                    selectCategory(result.data._id);
+                } else {
+                    showErrorAlert('创建品类失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('创建品类时发生错误:', error);
+                showErrorAlert('创建品类失败: ' + error.message);
+            }
+        }
+
+        async function deleteCategory() {
+            if (!currentSelectedCategoryId) {
+                alert('请先选择要删除的品类');
+                return;
+            }
+
+            const category = currentCategories.find(c => c._id === currentSelectedCategoryId);
+            if (!confirm(`确定要删除品类"${category.name}"吗？此操作不可撤销。`)) return;
+
+            try {
+                const response = await fetch(`/api/categories/${currentSelectedCategoryId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessAlert('品类删除成功！');
+                    document.getElementById('category-editor-content').style.display = 'none';
+                    document.getElementById('category-editor-empty').style.display = 'block';
+                    currentSelectedCategoryId = '';
+                    await loadCategories();
+                } else {
+                    showErrorAlert('删除品类失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('删除品类时发生错误:', error);
+                showErrorAlert('删除品类失败: ' + error.message);
+            }
+        }
+
+        // ==================== 背景图管理函数 ====================
+        
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings/cta-background');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    currentCtaBackgroundUrl = result.data.value || '';
+                    currentCtaDescription = result.data.description || '';
+                    
+                    document.getElementById('cta-background').value = currentCtaBackgroundUrl;
+                    document.getElementById('setting-description').value = currentCtaDescription;
+                    
+                    updateCtaBackgroundPreview();
+                    console.log('✅ 成功加载背景图设置');
+                } else {
+                    currentCtaBackgroundUrl = '';
+                    currentCtaDescription = '';
+                    updateCtaBackgroundPreview();
+                }
+            } catch (error) {
+                console.error('加载背景图设置时发生错误:', error);
+                showErrorAlert('加载设置数据失败: ' + error.message);
+            }
+        }
+
+        function updateCtaBackgroundPreview() {
+            const container = document.getElementById('cta-background-preview');
+            const deleteBtn = document.getElementById('delete-cta-bg-btn');
+            
+            if (currentCtaBackgroundUrl) {
+                container.innerHTML = `
+                    <img src="${currentCtaBackgroundUrl}" class="image-preview-large" alt="CTA背景图" 
+                         style="max-height: 200px; width: 100%; object-fit: cover;"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="image-placeholder" style="display: none;">图片加载失败</div>
+                `;
+                deleteBtn.style.display = 'inline-flex';
+            } else {
+                container.innerHTML = '<div class="image-placeholder" style="width: 100%; height: 200px;">暂无背景图</div>';
+                deleteBtn.style.display = 'none';
+            }
+        }
+
+        function replaceCtaBackground() {
+            document.getElementById('cta-file-input').click();
+        }
+
+        function captureCtaBackground() {
+            document.getElementById('cta-camera-input').click();
+        }
+
+        function deleteCtaBackground() {
+            if (confirm('确定要删除当前背景图吗？')) {
+                currentCtaBackgroundUrl = '';
+                document.getElementById('cta-background').value = '';
+                updateCtaBackgroundPreview();
+            }
+        }
+
+        async function uploadCtaBackgroundImage(file) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentCtaBackgroundUrl = result.data.fullUrl;
+                    document.getElementById('cta-background').value = currentCtaBackgroundUrl;
+                    updateCtaBackgroundPreview();
+                    showSuccessAlert('背景图上传成功！');
+                } else {
+                    showErrorAlert('背景图上传失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('上传背景图时发生错误:', error);
+                showErrorAlert('背景图上传失败: ' + error.message);
+            }
+        }
+
+        async function saveCtaBackground() {
+            if (!currentCtaBackgroundUrl) {
+                alert('请先上传背景图片');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/settings/cta-background', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        value: currentCtaBackgroundUrl,
+                        description: document.getElementById('setting-description').value.trim() || '云养茶园CTA区域背景图'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessAlert('背景图设置保存成功！');
+                    await loadSettings();
+                } else {
+                    showErrorAlert('保存设置失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('保存背景图设置时发生错误:', error);
+                showErrorAlert('保存设置失败: ' + error.message);
+            }
+        }
+
+        function resetCtaBackground() {
+            if (confirm('确定要重置所有更改吗？未保存的修改将丢失。')) {
+                loadSettings();
+            }
+        }
+
+        // ==================== 页脚管理函数 ====================
+        
+        async function loadFooterSettings() {
+            try {
+                const response = await fetch('/api/settings/footer');
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentFooterData = result.data;
+                    
+                    document.getElementById('footer-garden-name').value = currentFooterData.gardenName || '';
+                    document.getElementById('footer-copyright').value = currentFooterData.copyrightText || '';
+                    document.getElementById('footer-logo-url').value = currentFooterData.logoUrl || '';
+                    
+                    updateFooterLogoPreview();
+                    renderFooterSocialLinks();
+                    displayFooterPreview();
+                    
+                    console.log('✅ 成功加载页脚设置');
+                } else {
+                    showErrorAlert('加载页脚设置失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('加载页脚设置时发生错误:', error);
+                showErrorAlert('加载页脚设置失败: ' + error.message);
+            }
+        }
+
+        function updateFooterLogoPreview() {
+            const container = document.getElementById('footer-logo-preview');
+            const deleteBtn = document.getElementById('delete-footer-logo-btn');
+            
+            if (currentFooterData.logoUrl) {
+                container.innerHTML = `
+                    <img src="${currentFooterData.logoUrl}" class="image-preview-large" alt="页脚Logo" 
+                         style="max-width: 200px; max-height: 100px;"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="image-placeholder" style="display: none;">Logo加载失败</div>
+                `;
+                deleteBtn.style.display = 'inline-flex';
+            } else {
+                container.innerHTML = '<div class="image-placeholder" style="width: 200px; height: 100px;">暂无Logo</div>';
+                deleteBtn.style.display = 'none';
+            }
+        }
+
+        function uploadFooterLogo() {
+            document.getElementById('footer-logo-file-input').click();
+        }
+
+        function captureFooterLogo() {
+            document.getElementById('footer-logo-camera-input').click();
+        }
+
+        function deleteFooterLogo() {
+            if (confirm('确定要删除页脚Logo吗？')) {
+                currentFooterData.logoUrl = '';
+                document.getElementById('footer-logo-url').value = '';
+                updateFooterLogoPreview();
+            }
+        }
+
+        async function uploadFooterLogoFile(file) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentFooterData.logoUrl = result.data.fullUrl;
+                    document.getElementById('footer-logo-url').value = currentFooterData.logoUrl;
+                    updateFooterLogoPreview();
+                    showSuccessAlert('Logo上传成功！');
+                } else {
+                    showErrorAlert('Logo上传失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('上传Logo时发生错误:', error);
+                showErrorAlert('Logo上传失败: ' + error.message);
+            }
+        }
+
+        function renderFooterSocialLinks() {
+            const container = document.getElementById('footer-social-links-list');
+            
+            if (!currentFooterData.socialLinks || currentFooterData.socialLinks.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 2rem;">暂无社交链接，使用下方表单添加</div>';
+                return;
+            }
+
+            container.innerHTML = currentFooterData.socialLinks.map((link, index) => `
+                <div class="social-link-item">
+                    <div class="social-platform">${platformNames[link.platform] || link.platform}</div>
+                    <input type="text" class="form-control" value="${link.url}" 
+                           onchange="updateFooterSocialLink(${index}, this.value)" 
+                           placeholder="链接URL">
+                    <button class="btn btn-danger btn-small" onclick="removeFooterSocialLink(${index})">删除</button>
+                </div>
+            `).join('');
+        }
+
+        function addFooterSocialLink() {
+            const platformSelect = document.getElementById('footer-new-platform');
+            const urlInput = document.getElementById('footer-new-url');
+            
+            const platform = platformSelect.value;
+            const url = urlInput.value.trim();
+
+            if (!platform) {
+                alert('请选择社交平台');
+                return;
+            }
+
+            if (!url) {
+                alert('请输入链接URL');
+                return;
+            }
+
+            try {
+                new URL(url);
+            } catch (e) {
+                alert('请输入有效的URL格式（需要包含 http:// 或 https://）');
+                return;
+            }
+
+            const existingIndex = currentFooterData.socialLinks.findIndex(link => link.platform === platform);
+            if (existingIndex !== -1) {
+                if (confirm(`已存在 ${platformNames[platform]} 的链接，是否替换？`)) {
+                    currentFooterData.socialLinks[existingIndex].url = url;
+                } else {
+                    return;
+                }
+            } else {
+                currentFooterData.socialLinks.push({ platform, url });
+            }
+
+            platformSelect.value = '';
+            urlInput.value = '';
+            renderFooterSocialLinks();
+            displayFooterPreview();
+        }
+
+        function updateFooterSocialLink(index, newUrl) {
+            if (currentFooterData.socialLinks[index]) {
+                currentFooterData.socialLinks[index].url = newUrl.trim();
+            }
+        }
+
+        function removeFooterSocialLink(index) {
+            const link = currentFooterData.socialLinks[index];
+            if (confirm(`确定要删除 ${platformNames[link.platform]} 的链接吗？`)) {
+                currentFooterData.socialLinks.splice(index, 1);
+                renderFooterSocialLinks();
+                displayFooterPreview();
+            }
+        }
+
+        async function saveAllFooterSettings() {
+            try {
+                const footerData = {
+                    logoUrl: currentFooterData.logoUrl || '',
+                    gardenName: document.getElementById('footer-garden-name').value.trim(),
+                    copyrightText: document.getElementById('footer-copyright').value.trim(),
+                    socialLinks: currentFooterData.socialLinks
+                };
+
+                const response = await fetch('/api/settings/footer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(footerData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessAlert('所有页脚设置保存成功！');
+                    currentFooterData = result.data;
+                    displayFooterPreview();
+                } else {
+                    showErrorAlert('保存页脚设置失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('保存页脚设置时发生错误:', error);
+                showErrorAlert('保存页脚设置失败: ' + error.message);
+            }
+        }
+
+        function displayFooterPreview() {
+            const preview = document.getElementById('footer-preview');
+            const content = document.getElementById('footer-preview-content');
+            
+            preview.style.display = 'block';
+            content.innerHTML = `
+                    ${currentFooterData.logoUrl ? `
+                        <div style="margin-bottom: 1rem;">
+                        <strong style="color: var(--tea-green-dark);">Logo:</strong><br>
+                        <img src="${currentFooterData.logoUrl}" style="max-width: 120px; margin-top: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;" alt="Logo预览">
+                        </div>
+                    ` : '<p><strong>Logo:</strong> 未设置</p>'}
+                    
+                <div class="preview-grid">
+                    <div class="preview-item">
+                        <strong>茶园名称</strong>
+                        ${currentFooterData.gardenName || '未设置'}
+                    </div>
+                    <div class="preview-item">
+                        <strong>版权信息</strong>
+                        ${currentFooterData.copyrightText || '未设置'}
+                    </div>
+                    <div class="preview-item">
+                        <strong>社交链接</strong>
+                        ${currentFooterData.socialLinks.length} 个
+                    </div>
+                </div>
+                
+                ${currentFooterData.socialLinks.length > 0 ? `
+                    <div style="margin-top: 1rem;">
+                        <strong style="color: var(--tea-green-dark); display: block; margin-bottom: 0.5rem;">社交链接列表:</strong>
+                        ${currentFooterData.socialLinks.map((link, index) => `
+                            <div style="padding: 0.5rem; background: var(--tea-cream); border-radius: 4px; margin-bottom: 0.5rem; font-size: 0.85rem;">
+                                <strong>${index + 1}. ${platformNames[link.platform]}:</strong>
+                                <a href="${link.url}" target="_blank" style="color: var(--tea-green); word-break: break-all;">${link.url}</a>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // ==================== 文件输入初始化 ====================
+        
+        function initFileInputs() {
+            // 地块图片
+            document.getElementById('plot-file-input').addEventListener('change', function(e) {
+                if (e.target.files.length > 0 && !this.onchange) {
+                    uploadPlotImage(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+
+            document.getElementById('plot-camera-input').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    uploadPlotImage(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+
+            // 品类图片
+            document.getElementById('category-file-input').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    uploadCategoryImage(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+
+            document.getElementById('category-camera-input').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    uploadCategoryImage(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+
+            // CTA背景图
+            document.getElementById('cta-file-input').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    uploadCtaBackgroundImage(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+
+            document.getElementById('cta-camera-input').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    uploadCtaBackgroundImage(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+
+            // 页脚Logo
+            document.getElementById('footer-logo-file-input').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    uploadFooterLogoFile(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+            
+            document.getElementById('footer-logo-camera-input').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    uploadFooterLogoFile(e.target.files[0]);
+                }
+                e.target.value = '';
+            });
+        }
+
+        // ==================== 工具函数 ====================
+        
+        function showLoadingInList(containerId, message = '正在加载...') {
+            document.getElementById(containerId).innerHTML = `
+                <div class="empty-state">
+                    <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 1rem;"></div>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+
+        function showErrorInList(containerId, message) {
+            document.getElementById(containerId).innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <div style="color: var(--error);">${message}</div>
+                </div>
+            `;
+        }
+
+        function showSuccessAlert(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success';
+            alertDiv.innerHTML = `
+                <span style="font-size: 1.2rem;">✅</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '10000';
+            alertDiv.style.maxWidth = '400px';
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        function showErrorAlert(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-error';
+            alertDiv.innerHTML = `
+                <span style="font-size: 1.2rem;">❌</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '10000';
+            alertDiv.style.maxWidth = '400px';
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 5000);
+        }
+
+        // 离开页面前的提示（如果有未保存的更改）
+        window.addEventListener('beforeunload', function(e) {
+            // 这里可以添加检查是否有未保存的更改的逻辑
+            // 暂时注释掉，避免每次都提示
+            // e.preventDefault();
+            // e.returnValue = '';
+        });
+    </script>
+</body>
+</html>

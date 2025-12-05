@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>制作步骤模板管理 - 茶园管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe0b2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 { 
+            color: #d84315; 
+            font-size: 1.8rem; 
+            margin-bottom: 0.5rem; 
+        }
+        
+        .header .subtitle { 
+            color: #666; 
+            font-size: 0.9rem; 
+        }
+        
+        .nav-buttons { 
+            margin-top: 1rem; 
+            display: flex; 
+            gap: 1rem; 
+        }
+        
+        .nav-btn {
+            background: #6c757d; 
+            color: white; 
+            text-decoration: none;
+            padding: 0.5rem 1rem; 
+            border-radius: 5px; 
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-btn:hover { background: #5a6268; }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 0 2rem 4rem; 
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 4px solid #1976d2;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            color: #0d47a1;
+        }
+        
+        .info-box strong {
+            color: #1565c0;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .template-card {
+            background: white; 
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden; 
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white; 
+            padding: 1.5rem 2rem;
+            font-size: 1.3rem; 
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-body { 
+            padding: 2rem; 
+        }
+        
+        .craft-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .craft-title {
+            color: #d84315;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #ff6b6b;
+        }
+        
+        .form-group { 
+            margin-bottom: 1.5rem; 
+        }
+        
+        .form-group label {
+            display: block; 
+            color: #333; 
+            font-weight: 500; 
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            width: 100%; 
+            padding: 0.75rem; 
+            border: 2px solid #e0e0e0;
+            border-radius: 8px; 
+            font-size: 0.9rem; 
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none; 
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+        
+        textarea.form-control {
+            min-height: 100px; 
+            resize: vertical; 
+            font-family: inherit;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white; 
+            border: none; 
+            padding: 0.75rem 2rem;
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 1rem;
+            font-weight: 600; 
+            transition: all 0.3s; 
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+        }
+        
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 制作步骤模板管理</h1>
+        <p class="subtitle">设置制作步骤的默认文案模板，将在新增批次时自动填充</p>
+        <div class="nav-buttons">
+            <a href="/dashboard" class="nav-btn">🏠 返回仪表板</a>
+            <a href="/admin/template-management" class="nav-btn">📝 返回模板管理</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="message-container"></div>
+        
+        <div class="info-box">
+            <strong>💡 功能说明</strong>
+            <p>在这里为五个制作步骤（摊晾、杀青、揉捻、干燥、分拣）设置默认的文案模板。</p>
+            <p>当管理员新增批次或编辑未填写的批次时，系统会自动加载这些默认文案，大大提高工作效率。</p>
+        </div>
+
+        <div id="loading" class="loading">正在加载模板...</div>
+        
+        <div id="templates-container" class="hidden">
+            <!-- 摊晾 -->
+            <div class="template-card">
+                <div class="card-header">
+                    <span>步骤 1：摊晾</span>
+                    <button class="btn btn-success" onclick="saveTemplate('摊晾')">💾 保存模板</button>
+                </div>
+                <div class="card-body">
+                    <div class="craft-section">
+                        <div class="craft-title">手工匠心</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="摊晾-manual-purpose" placeholder="例如：散发水分，提升茶叶鲜爽度..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="摊晾-manual-method" placeholder="例如：将鲜叶均匀摊放在竹席上..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="摊晾-manual-sensory-change" placeholder="例如：叶片逐渐变软，香气初显..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="摊晾-manual-value" placeholder="例如：保留茶叶原始香气..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="craft-section">
+                        <div class="craft-title">现代工艺</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="摊晾-modern-purpose" placeholder="例如：精确控制水分散发速度..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="摊晾-modern-method" placeholder="例如：使用温湿度可控的摊晾机..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="摊晾-modern-sensory-change" placeholder="例如：叶片状态更加均匀..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="摊晾-modern-value" placeholder="例如：提高生产效率和品质稳定性..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 杀青 -->
+            <div class="template-card">
+                <div class="card-header">
+                    <span>步骤 2：杀青</span>
+                    <button class="btn btn-success" onclick="saveTemplate('杀青')">💾 保存模板</button>
+                </div>
+                <div class="card-body">
+                    <div class="craft-section">
+                        <div class="craft-title">手工匠心</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="杀青-manual-purpose"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="杀青-manual-method"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="杀青-manual-sensory-change"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="杀青-manual-value"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="craft-section">
+                        <div class="craft-title">现代工艺</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="杀青-modern-purpose"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="杀青-modern-method"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="杀青-modern-sensory-change"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="杀青-modern-value"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 揉捻 -->
+            <div class="template-card">
+                <div class="card-header">
+                    <span>步骤 3：揉捻</span>
+                    <button class="btn btn-success" onclick="saveTemplate('揉捻')">💾 保存模板</button>
+                </div>
+                <div class="card-body">
+                    <div class="craft-section">
+                        <div class="craft-title">手工匠心</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="揉捻-manual-purpose"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="揉捻-manual-method"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="揉捻-manual-sensory-change"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="揉捻-manual-value"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="craft-section">
+                        <div class="craft-title">现代工艺</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="揉捻-modern-purpose"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="揉捻-modern-method"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="揉捻-modern-sensory-change"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="揉捻-modern-value"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 干燥 -->
+            <div class="template-card">
+                <div class="card-header">
+                    <span>步骤 4：干燥</span>
+                    <button class="btn btn-success" onclick="saveTemplate('干燥')">💾 保存模板</button>
+                </div>
+                <div class="card-body">
+                    <div class="craft-section">
+                        <div class="craft-title">手工匠心</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="干燥-manual-purpose"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="干燥-manual-method"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="干燥-manual-sensory-change"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="干燥-manual-value"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="craft-section">
+                        <div class="craft-title">现代工艺</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="干燥-modern-purpose"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="干燥-modern-method"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="干燥-modern-sensory-change"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="干燥-modern-value"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分拣 -->
+            <div class="template-card">
+                <div class="card-header">
+                    <span>步骤 5：分拣</span>
+                    <button class="btn btn-success" onclick="saveTemplate('分拣')">💾 保存模板</button>
+                </div>
+                <div class="card-body">
+                    <div class="craft-section">
+                        <div class="craft-title">手工匠心</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="分拣-manual-purpose"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="分拣-manual-method"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="分拣-manual-sensory-change"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="分拣-manual-value"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="craft-section">
+                        <div class="craft-title">现代工艺</div>
+                        <div class="form-group">
+                            <label>工艺目的</label>
+                            <textarea class="form-control" id="分拣-modern-purpose"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>操作方法</label>
+                            <textarea class="form-control" id="分拣-modern-method"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>感官变化</label>
+                            <textarea class="form-control" id="分拣-modern-sensory-change"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>工艺价值</label>
+                            <textarea class="form-control" id="分拣-modern-value"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时获取模板数据
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTemplates();
+        });
+
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/step-templates');
+                const result = await response.json();
+                
+                if (!result.success) {
+                    showMessage('加载模板失败: ' + result.message, 'error');
+                    return;
+                }
+                
+                const templates = (result.data || []).map((template) => ({
+                    ...template,
+                    stepName: template.stepName ?? template.step_name ?? '',
+                    manualCraft: template.manualCraft ?? template.manual_craft ?? {},
+                    modernCraft: template.modernCraft ?? template.modern_craft ?? {},
+                }));
+                
+                // 填充表单数据
+                templates.forEach(template => {
+                    const stepName = template.stepName;
+                    if (!stepName) {
+                        console.warn('[StepTemplates] 缺少 stepName，已跳过：', template);
+                        return;
+                    }
+                    
+                    // 填充手工匠心
+                    if (template.manualCraft) {
+                        document.getElementById(`${stepName}-manual-purpose`).value = template.manualCraft.purpose || '';
+                        document.getElementById(`${stepName}-manual-method`).value = template.manualCraft.method || '';
+                        document.getElementById(`${stepName}-manual-sensory-change`).value = template.manualCraft.sensory_change || template.manualCraft.sensoryChange || '';
+                        document.getElementById(`${stepName}-manual-value`).value = template.manualCraft.value || '';
+                    }
+                    
+                    // 填充现代工艺
+                    if (template.modernCraft) {
+                        document.getElementById(`${stepName}-modern-purpose`).value = template.modernCraft.purpose || '';
+                        document.getElementById(`${stepName}-modern-method`).value = template.modernCraft.method || '';
+                        document.getElementById(`${stepName}-modern-sensory-change`).value = template.modernCraft.sensory_change || template.modernCraft.sensoryChange || '';
+                        document.getElementById(`${stepName}-modern-value`).value = template.modernCraft.value || '';
+                    }
+                });
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('templates-container').classList.remove('hidden');
+                showMessage('模板加载成功', 'success');
+                
+            } catch (error) {
+                console.error('加载模板时出错:', error);
+                showMessage('加载失败: ' + error.message, 'error');
+            }
+        }
+
+        async function saveTemplate(stepName) {
+            try {
+                // 收集手工匠心数据
+                const manual_craft = {
+                    purpose: document.getElementById(`${stepName}-manual-purpose`).value.trim(),
+                    method: document.getElementById(`${stepName}-manual-method`).value.trim(),
+                    sensory_change: document.getElementById(`${stepName}-manual-sensory-change`).value.trim(),
+                    value: document.getElementById(`${stepName}-manual-value`).value.trim()
+                };
+                
+                // 收集现代工艺数据
+                const modern_craft = {
+                    purpose: document.getElementById(`${stepName}-modern-purpose`).value.trim(),
+                    method: document.getElementById(`${stepName}-modern-method`).value.trim(),
+                    sensory_change: document.getElementById(`${stepName}-modern-sensory-change`).value.trim(),
+                    value: document.getElementById(`${stepName}-modern-value`).value.trim()
+                };
+                
+                showMessage(`正在保存 ${stepName} 模板...`, 'info');
+                
+                const response = await fetch(`/api/step-templates/${encodeURIComponent(stepName)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ manual_craft, modern_craft })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(`✅ ${stepName} 模板保存成功！`, 'success');
+                } else {
+                    showMessage(`❌ 保存失败: ${result.message}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('保存模板时出错:', error);
+                showMessage(`❌ 保存失败: ${error.message}`, 'error');
+            }
+        }
+
+        function showMessage(text, type = 'info') {
+            const container = document.getElementById('message-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+            messageDiv.style.display = 'block';
+            
+            container.innerHTML = '';
+            container.appendChild(messageDiv);
+            
+            // 3秒后自动隐藏成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天气模板管理 - 茶园管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 { 
+            color: #1976d2; 
+            font-size: 1.8rem; 
+            margin-bottom: 0.5rem; 
+        }
+        
+        .header .subtitle { 
+            color: #666; 
+            font-size: 0.9rem; 
+        }
+        
+        .nav-buttons { 
+            margin-top: 1rem; 
+            display: flex; 
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            background: #6c757d; 
+            color: white; 
+            text-decoration: none;
+            padding: 0.5rem 1rem; 
+            border-radius: 5px; 
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .nav-btn:hover { background: #5a6268; }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 0 2rem 4rem; 
+        }
+        
+        /* 表单卡片样式 */
+        .form-card {
+            background: white; 
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden; 
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+            color: white; 
+            padding: 1.5rem 2rem;
+            font-size: 1.3rem; 
+            font-weight: 600;
+        }
+        
+        .card-body { padding: 2rem; }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        
+        .form-group label {
+            display: block; 
+            color: #333; 
+            font-weight: 500; 
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group label .required { 
+            color: #dc3545; 
+            margin-left: 3px; 
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #42a5f5;
+            box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 165, 245, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover { background: #5a6268; }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover { background: #c82333; }
+        
+        /* 天气列表样式 */
+        .weather-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .weather-item {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 2px solid #dee2e6;
+            transition: all 0.3s;
+        }
+        
+        .weather-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border-color: #42a5f5;
+        }
+        
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .weather-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .weather-icon-preview {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+        }
+        
+        .weather-icon-preview img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .weather-info {
+            margin-bottom: 1rem;
+        }
+        
+        .weather-info-item {
+            display: flex;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .weather-info-label {
+            color: #666;
+            min-width: 80px;
+        }
+        
+        .weather-info-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .weather-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .weather-actions .btn {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #42a5f5;
+            background: #e3f2fd;
+        }
+        
+        .file-upload-area.dragover {
+            border-color: #1e88e5;
+            background: #bbdefb;
+        }
+        
+        .icon-preview-large {
+            width: 120px;
+            height: 120px;
+            margin: 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+        }
+        
+        .icon-preview-large img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 0 1rem 2rem; }
+            .weather-list { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌤️ 天气模板管理</h1>
+        <p class="subtitle">管理天气选项及对应的SVG图标，用于每日日志卡片的天气选择</p>
+        <div class="nav-buttons">
+            <a href="/admin/template-management" class="nav-btn">📝 返回模板管理</a>
+            <a href="/dashboard" class="nav-btn">🏠 返回仪表板</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 新增/编辑表单 -->
+        <div class="form-card">
+            <div class="card-header">
+                <span id="formTitle">➕ 新增天气模板</span>
+            </div>
+            <div class="card-body">
+                <form id="weatherForm">
+                    <input type="hidden" id="weatherId">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>天气名称 <span class="required">*</span></label>
+                            <input type="text" class="form-control" id="weatherName" placeholder="例如：晴天、多云、雨天" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>温度范围建议</label>
+                            <input type="text" class="form-control" id="temperatureRange" placeholder="例如：15-25°C">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>排序顺序</label>
+                            <input type="number" class="form-control" id="sortOrder" min="0" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>描述</label>
+                        <textarea class="form-control" id="description" rows="2" placeholder="天气描述（可选）"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>天气图标 (SVG)</label>
+                        <div class="file-upload-area" id="uploadArea">
+                            <div class="icon-preview-large" id="iconPreview" style="display: none;">
+                                <img id="previewImg" src="" alt="图标预览">
+                            </div>
+                            <p>点击或拖拽SVG文件到此处上传</p>
+                            <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">支持SVG格式</p>
+                            <input type="file" id="svgFile" accept=".svg" style="display: none;">
+                            <input type="hidden" id="svgIcon">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="isActive" checked>
+                            启用该天气选项
+                        </label>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary">💾 保存</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">🔄 重置</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 天气列表 -->
+        <div class="form-card">
+            <div class="card-header">📋 天气模板列表</div>
+            <div class="card-body">
+                <div class="weather-list" id="weatherList">
+                    <p style="text-align: center; color: #999;">加载中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentEditId = null;
+
+        // 页面加载时获取天气列表
+        document.addEventListener('DOMContentLoaded', () => {
+            loadWeatherList();
+            setupFileUpload();
+        });
+
+        // 设置文件上传
+        function setupFileUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('svgFile');
+            
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // 拖拽上传
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileUpload(files[0]);
+                }
+            });
+        }
+
+        // 处理文件选择
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileUpload(file);
+            }
+        }
+
+        // 处理文件上传
+        async function handleFileUpload(file) {
+            if (!file.name.endsWith('.svg')) {
+                alert('只能上传SVG格式的图标');
+                return;
+            }
+            
+            const formData = new FormData();
+            // ⚠️ 重要：category 必须在文件之前添加，这样 multer 才能正确解析
+            formData.append('category', 'weather');
+            formData.append('svg_file', file);
+            
+            try {
+                const response = await fetch('/api/weather-templates/upload-icon', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                console.log('上传结果:', result); // 调试信息
+                
+                if (result.success) {
+                    const imageUrl = result.data.url;
+                    console.log('图标URL:', imageUrl); // 调试信息
+                    
+                    document.getElementById('svgIcon').value = imageUrl;
+                    const previewImg = document.getElementById('previewImg');
+                    const iconPreview = document.getElementById('iconPreview');
+                    
+                    // 设置图片源并显示预览
+                    previewImg.src = imageUrl;
+                    previewImg.onload = function() {
+                        console.log('图标加载成功');
+                        iconPreview.style.display = 'flex';
+                    };
+                    previewImg.onerror = function() {
+                        console.error('图标加载失败:', imageUrl);
+                        alert('⚠️ 图标上传成功但预览失败，请检查文件路径');
+                    };
+                    
+                    // 立即显示预览容器（即使图片还在加载）
+                    iconPreview.style.display = 'flex';
+                    
+                    alert('✅ 图标上传成功');
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                console.error('上传失败:', error);
+                alert('❌ 上传失败: ' + error.message);
+            }
+        }
+
+        // 加载天气列表
+        async function loadWeatherList() {
+            try {
+                const response = await fetch('/api/weather-templates');
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderWeatherList(result.data);
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                console.error('加载失败:', error);
+                document.getElementById('weatherList').innerHTML = 
+                    '<p style="text-align: center; color: #dc3545;">加载失败</p>';
+            }
+        }
+
+        // 渲染天气列表
+        function renderWeatherList(weathers) {
+            const container = document.getElementById('weatherList');
+            
+            if (weathers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">暂无天气模板</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+
+            weathers.forEach((weather) => {
+                const weatherId = weather.id ?? weather._id ?? '';
+                if (!weatherId) {
+                    console.warn('[Weather] 缺少 id，跳过该记录:', weather);
+                    return;
+                }
+
+                const svgIcon = weather.svgIcon ?? weather.svg_icon ?? '';
+                const temperatureRange = weather.temperatureRange ?? weather.temperature_range ?? '';
+                const sortOrder = weather.sortOrder ?? weather.sort_order ?? 0;
+                const isActive = typeof weather.isActive === 'boolean' ? weather.isActive : !!weather.is_active;
+                const description = weather.description ?? '';
+
+                const item = document.createElement('div');
+                item.className = 'weather-item';
+                item.innerHTML = `
+                    <div class="weather-header">
+                        <div class="weather-name">${weather.name}</div>
+                        ${svgIcon
+                          ? `<div class="weather-icon-preview">
+                                <img src="${svgIcon}" alt="${weather.name}">
+                             </div>`
+                          : ''}
+                    </div>
+                    <div class="weather-info">
+                        ${temperatureRange
+                          ? `<div class="weather-info-item">
+                                <span class="weather-info-label">温度范围:</span>
+                                <span class="weather-info-value">${temperatureRange}</span>
+                             </div>`
+                          : ''}
+                        <div class="weather-info-item">
+                            <span class="weather-info-label">排序:</span>
+                            <span class="weather-info-value">${sortOrder}</span>
+                        </div>
+                        <div class="weather-info-item">
+                            <span class="weather-info-label">状态:</span>
+                            <span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">
+                                ${isActive ? '已启用' : '已禁用'}
+                            </span>
+                        </div>
+                        ${description
+                          ? `<div class="weather-info-item" style="margin-top: 0.5rem;">
+                                <span class="weather-info-value">${description}</span>
+                             </div>`
+                          : ''}
+                    </div>
+                    <div class="weather-actions">
+                        <button class="btn btn-primary weather-edit-btn">✏️ 编辑</button>
+                        <button class="btn btn-danger weather-delete-btn">🗑️ 删除</button>
+                    </div>
+                `;
+
+                const editBtn = item.querySelector('.weather-edit-btn');
+                const deleteBtn = item.querySelector('.weather-delete-btn');
+
+                if (editBtn) {
+                    editBtn.addEventListener('click', () => editWeather(weatherId));
+                }
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', () => deleteWeather(weatherId, weather.name));
+                }
+
+                container.appendChild(item);
+            });
+        }
+
+        // 表单提交
+        document.getElementById('weatherForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('weatherId').value;
+            const data = {
+                name: document.getElementById('weatherName').value,
+                svg_icon: document.getElementById('svgIcon').value,
+                temperature_range: document.getElementById('temperatureRange').value,
+                description: document.getElementById('description').value,
+                sort_order: parseInt(document.getElementById('sortOrder').value) || 0,
+                is_active: document.getElementById('isActive').checked
+            };
+            
+            try {
+                const url = id ? `/api/weather-templates/${id}` : '/api/weather-templates';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    resetForm();
+                    loadWeatherList();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('❌ 保存失败');
+            }
+        });
+
+        // 编辑天气
+        async function editWeather(id) {
+            try {
+                const response = await fetch('/api/weather-templates');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const weather = result.data.find((w) => (w.id ?? w._id) === id);
+                    if (weather) {
+                        const svgIcon = weather.svgIcon ?? weather.svg_icon ?? '';
+                        const temperatureRange = weather.temperatureRange ?? weather.temperature_range ?? '';
+                        const sortOrder = weather.sortOrder ?? weather.sort_order ?? 0;
+                        const isActive = typeof weather.isActive === 'boolean' ? weather.isActive : !!weather.is_active;
+
+                        document.getElementById('weatherId').value = weather.id ?? weather._id;
+                        document.getElementById('weatherName').value = weather.name;
+                        document.getElementById('temperatureRange').value = temperatureRange;
+                        document.getElementById('sortOrder').value = sortOrder;
+                        document.getElementById('description').value = weather.description ?? '';
+                        document.getElementById('svgIcon').value = svgIcon;
+                        document.getElementById('isActive').checked = isActive;
+                        
+                        if (svgIcon) {
+                            document.getElementById('previewImg').src = svgIcon;
+                            document.getElementById('iconPreview').style.display = 'flex';
+                        }
+                        
+                        document.getElementById('formTitle').textContent = '✏️ 编辑天气模板';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
+            } catch (error) {
+                console.error('加载失败:', error);
+                alert('❌ 加载失败');
+            }
+        }
+
+        // 删除天气
+        async function deleteWeather(id, name) {
+            if (!confirm(`确定要删除天气"${name}"吗？此操作不可恢复。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/weather-templates/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    loadWeatherList();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('❌ 删除失败');
+            }
+        }
+
+        // 重置表单
+        function resetForm() {
+            document.getElementById('weatherForm').reset();
+            document.getElementById('weatherId').value = '';
+            document.getElementById('svgIcon').value = '';
+            document.getElementById('iconPreview').style.display = 'none';
+            document.getElementById('formTitle').textContent = '➕ 新增天气模板';
+        }
+    </script>
+</body>
+</html>
+

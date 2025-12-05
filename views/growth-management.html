@@ -1,0 +1,4091 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生长过程管理 - 完整版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            min-height: 100vh;
+        }
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .header h1 { color: #2e7d32; font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .header .subtitle { color: #666; font-size: 0.9rem; }
+        .nav-buttons { margin-top: 1rem; display: flex; gap: 1rem; }
+        .nav-btn {
+            background: #6c757d; color: white; text-decoration: none;
+            padding: 0.5rem 1rem; border-radius: 5px; font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        .nav-btn:hover { background: #5a6268; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 2rem 4rem; }
+        
+        /* 左右分栏布局 */
+        .split-layout {
+            display: flex;
+            gap: 2rem;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            min-height: calc(100vh - 250px);
+        }
+        
+        /* 左侧日历栏 */
+        .calendar-sidebar {
+            width: 350px;
+            flex-shrink: 0;
+            border-right: 2px solid #e0e0e0;
+            padding: 2rem 1.5rem;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+        
+        /* 右侧内容区 */
+        .content-main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        /* 日历组件样式 */
+        .calendar-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #66bb6a;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .calendar-nav-btn {
+            background: #66bb6a;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .calendar-nav-btn:hover {
+            background: #43a047;
+            transform: scale(1.1);
+        }
+        
+        .calendar-month-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2e7d32;
+            min-width: 120px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .calendar-year-select {
+            width: 100%;
+            max-width: 100%;
+            padding: 0.4rem 0.8rem;
+            border: 2px solid #66bb6a;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #2e7d32;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .calendar-year-select:hover {
+            background: #e8f5e9;
+        }
+        
+        .calendar-grid {
+            margin-top: 1rem;
+        }
+        
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .calendar-weekday {
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+            padding: 0.5rem 0;
+        }
+        
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+        
+        /* 日期状态颜色 */
+        .calendar-day.empty {
+            background: #ffffff;
+            color: #ccc;
+            cursor: default;
+        }
+        
+        .calendar-day.no-record {
+            background: #ffffff;
+            color: #999;
+        }
+        
+        .calendar-day.has-record {
+            background: #fff9c4;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .calendar-day.has-harvest {
+            background: #c8e6c9;
+            color: #1b5e20;
+            font-weight: 600;
+        }
+        
+        .calendar-day.has-farming {
+            background: #bbdefb;
+            color: #0d47a1;
+            font-weight: 600;
+        }
+        
+        .calendar-day.today {
+            border-color: #42a5f5;
+            box-shadow: 0 0 0 1px #42a5f5;
+        }
+        
+        .calendar-day.selected {
+            border-color: #f57c00;
+            box-shadow: 0 0 8px rgba(245, 124, 0, 0.4);
+            transform: scale(1.05);
+        }
+        
+        .calendar-day:not(.empty):hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 日历统计面板 */
+        .calendar-stats {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .stat-harvest { color: #2e7d32; }
+        .stat-farming { color: #1565c0; }
+        .stat-normal { color: #f57f17; }
+        .stat-empty { color: #999; }
+        
+        /* 图例说明 */
+        .calendar-legend {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #333;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        
+        .legend-color.harvest { background: #c8e6c9; }
+        .legend-color.farming { background: #bbdefb; }
+        .legend-color.normal { background: #fff9c4; }
+        .legend-color.empty { background: #ffffff; border: 1px solid #ddd; }
+        
+        /* 快捷操作 */
+        .calendar-actions {
+            margin-top: 1.5rem;
+        }
+        
+        .action-btn {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn-primary {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+            color: white;
+        }
+        
+        .action-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+        }
+        
+        .action-btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+        
+        .action-btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        /* 标签页样式 */
+        .tabs-navigation {
+            background: white;
+            border-radius: 15px 15px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0;
+        }
+        .tabs-nav {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 1.2rem;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button:hover {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .tab-button.active {
+            background: white;
+            color: #2e7d32;
+            border-bottom-color: #66bb6a;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 表单卡片样式 */
+        .form-card {
+            background: white; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden; margin-bottom: 2rem;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+            color: white; padding: 1.5rem 2rem;
+            font-size: 1.3rem; font-weight: 600;
+        }
+        .card-header-secondary {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+        }
+        .card-body { padding: 2rem; }
+        .section-title {
+            color: #2e7d32; font-size: 1.1rem; font-weight: 600;
+            margin-bottom: 1rem; padding-bottom: 0.5rem;
+            border-bottom: 2px solid #66bb6a;
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label {
+            display: block; color: #333; font-weight: 500; margin-bottom: 0.5rem;
+        }
+        .form-group label .required { color: #dc3545; margin-left: 3px; }
+        .form-control {
+            width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0;
+            border-radius: 8px; font-size: 0.9rem; transition: all 0.3s;
+        }
+        .form-control:focus {
+            outline: none; border-color: #66bb6a;
+            box-shadow: 0 0 0 3px rgba(102, 187, 106, 0.1);
+        }
+        textarea.form-control {
+            min-height: 100px; resize: vertical; font-family: inherit;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .image-upload-area {
+            border: 2px dashed #66bb6a; border-radius: 8px; padding: 2rem;
+            text-align: center; background: #f5f5f5; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .image-upload-area:hover {
+            background: #e8f5e9; border-color: #43a047;
+        }
+        .image-preview-container { margin-top: 1rem; position: relative; }
+        .image-preview {
+            max-width: 100%; max-height: 300px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .image-actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem; margin-top: 1rem;
+        }
+        .gallery-item {
+            position: relative; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .gallery-item img {
+            width: 100%; height: 150px; object-fit: cover;
+        }
+        .gallery-item .remove-btn {
+            position: absolute; top: 5px; right: 5px; background: #dc3545;
+            color: white; border: none; border-radius: 50%;
+            width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+        .gallery-item .remove-btn:hover {
+            background: #c82333; transform: scale(1.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+            color: white; border: none; padding: 0.75rem 2rem;
+            border-radius: 8px; cursor: pointer; font-size: 1rem;
+            font-weight: 600; transition: all 0.3s; display: inline-block;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #78909c 0%, #546e7a 100%);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+        }
+        .btn-small {
+            padding: 0.5rem 1rem; font-size: 0.85rem;
+        }
+        .readonly-field {
+            background: #f8f9fa; color: #666; cursor: not-allowed;
+        }
+        .info-box {
+            background: #e3f2fd; border-left: 4px solid #2196f3;
+            padding: 1rem; border-radius: 5px; margin-bottom: 1rem;
+        }
+        .info-box .info-icon {
+            display: inline-block; margin-right: 0.5rem; font-weight: 600;
+        }
+        .success-message {
+            background: #d4edda; color: #155724; padding: 1rem;
+            border-radius: 8px; margin-bottom: 1rem; border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            background: #f8d7da; color: #721c24; padding: 1rem;
+            border-radius: 8px; margin-bottom: 1rem; border: 1px solid #f5c6cb;
+        }
+        .hidden { display: none !important; }
+        .loading { text-align: center; padding: 2rem; color: #666; }
+        .save-button-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .save-button-container .btn {
+            font-size: 1.1rem;
+            padding: 1rem 3rem;
+        }
+        /* 步骤指示器样式 */
+        .form-step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .step-number {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .step-item.active .step-number {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(66, 165, 245, 0.4);
+        }
+        .step-label {
+            font-size: 0.9rem;
+            color: #999;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .step-item.active .step-label {
+            color: #1e88e5;
+            font-weight: 600;
+        }
+        .step-line {
+            width: 80px;
+            height: 2px;
+            background: #e0e0e0;
+            margin: 0 1rem;
+        }
+        /* 表单页面切换 */
+        .form-page {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* 表单导航按钮样式 */
+        .form-navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e0e0e0;
+        }
+        .form-navigation-buttons .btn {
+            flex: 1;
+            max-width: 200px;
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+        }
+        .form-navigation-buttons .btn-secondary {
+            background: linear-gradient(135deg, #90a4ae 0%, #78909c 100%);
+        }
+        .form-navigation-buttons .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(120, 144, 156, 0.3);
+        }
+        .form-navigation-buttons .btn-primary {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+        }
+        .form-navigation-buttons .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
+        }
+        .form-navigation-buttons .btn-success {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+        }
+        .form-navigation-buttons .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+        }
+        .logs-list {
+            margin-top: 1rem;
+        }
+        .log-item {
+            background: #f8f9fa;
+            border-left: 4px solid #42a5f5;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .log-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        .log-item-info h4 {
+            color: #1e88e5;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+        .log-item-info p {
+            color: #666;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        .log-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        .query-row {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            margin-bottom: 1.5rem;
+        }
+        .query-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .editing-mode-banner {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .editing-mode-banner strong {
+            font-size: 1.05rem;
+        }
+        
+        /* 月份总结特定样式 */
+        .summary-display {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .summary-section {
+            margin-bottom: 2rem;
+        }
+        .summary-section h3 {
+            color: #2e7d32;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        
+        /* 月份总结时间轴选择器 */
+        .timeline-selector {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .timeline-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+        
+        .timeline-year-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .year-nav-btn {
+            background: #66bb6a;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .year-nav-btn:hover {
+            background: #43a047;
+            transform: scale(1.1);
+        }
+        
+        .current-year-display {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2e7d32;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .timeline-months {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .month-card {
+            background: #f5f5f5;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .month-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .month-card.has-summary {
+            background: #c8e6c9;
+            border-color: #66bb6a;
+        }
+        
+        .month-card.has-logs {
+            background: #fff9c4;
+            border-color: #fbc02d;
+        }
+        
+        .month-card.empty {
+            background: #ffffff;
+            border-color: #e0e0e0;
+            color: #999;
+        }
+        
+        .month-card.selected {
+            border-color: #f57c00;
+            box-shadow: 0 0 0 3px rgba(245, 124, 0, 0.2);
+            transform: translateY(-4px) scale(1.05);
+        }
+        
+        .month-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .month-status {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .month-card.has-summary .month-status {
+            color: #1b5e20;
+        }
+        
+        .month-card.has-logs .month-status {
+            color: #f57f17;
+        }
+        
+        .timeline-legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e0e0e0;
+            font-size: 0.9rem;
+        }
+        
+        .timeline-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .timeline-legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+        
+        .timeline-legend-color.summary { background: #c8e6c9; border: 2px solid #66bb6a; }
+        .timeline-legend-color.logs { background: #fff9c4; border: 2px solid #fbc02d; }
+        .timeline-legend-color.empty { background: #ffffff; border: 2px solid #e0e0e0; }
+        
+        .year-quick-select {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .year-quick-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .year-quick-btn:hover {
+            background: #e8f5e9;
+            border-color: #66bb6a;
+        }
+        
+        .year-quick-btn.active {
+            background: #66bb6a;
+            color: white;
+            border-color: #66bb6a;
+        }
+        
+        @media (max-width: 1200px) {
+            .split-layout {
+                flex-direction: column;
+            }
+            
+            .calendar-sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 2px solid #e0e0e0;
+            }
+            
+            .timeline-months {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            /* 基础布局优化 */
+            .container { 
+                padding: 0 0.75rem; 
+            }
+            
+            .header {
+                padding: 1rem 0.75rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .header .subtitle {
+                font-size: 0.85rem;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .nav-btn {
+                text-align: center;
+            }
+            
+            /* 卡片样式优化 */
+            .card-header { 
+                padding: 1rem 1rem; 
+                font-size: 1.1rem;
+            }
+            
+            .card-body { 
+                padding: 1rem; 
+            }
+            
+            .form-card {
+                margin-bottom: 1rem;
+                border-radius: 10px;
+            }
+            
+            /* 表单布局优化 */
+            .form-row { 
+                grid-template-columns: 1fr; 
+                gap: 0.75rem;
+            }
+            
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .form-group label {
+                font-size: 0.9rem;
+                margin-bottom: 0.4rem;
+            }
+            
+            .form-control {
+                padding: 0.6rem;
+                font-size: 0.9rem;
+            }
+            
+            textarea.form-control {
+                min-height: 80px;
+            }
+            
+            /* 图片上传区域优化 */
+            .image-upload-area {
+                padding: 1.5rem 1rem;
+            }
+            
+            .image-upload-area p {
+                font-size: 0.9rem !important;
+            }
+            
+            .image-upload-area small {
+                font-size: 0.75rem !important;
+            }
+            
+            /* 图片预览优化 */
+            .image-preview {
+                max-height: 200px;
+            }
+            
+            .image-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .image-actions .btn {
+                width: 100%;
+                font-size: 0.85rem;
+                padding: 0.6rem 1rem;
+            }
+            
+            /* 图片画廊优化 */
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            
+            .gallery-item img {
+                height: 120px;
+            }
+            
+            .gallery-item .remove-btn {
+                width: 26px;
+                height: 26px;
+                font-size: 1rem;
+            }
+            
+            /* 记录人头像区域优化 */
+            #recorder-name {
+                font-size: 0.9rem;
+            }
+            
+            #recorder-avatar {
+                width: 40px !important;
+                height: 40px !important;
+                font-size: 0.75rem;
+            }
+            
+            /* 温度范围输入优化 */
+            .form-group div[style*="display: flex"] input {
+                font-size: 0.85rem;
+                padding: 0.5rem;
+            }
+            
+            .form-group div[style*="display: flex"] span {
+                font-size: 0.85rem;
+            }
+            
+            /* 章节标题优化 */
+            .section-title {
+                font-size: 1rem;
+                margin-bottom: 0.75rem;
+                padding-bottom: 0.4rem;
+            }
+            
+            /* 信息提示框优化 */
+            .info-box {
+                padding: 0.75rem;
+                font-size: 0.85rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .info-box p {
+                font-size: 0.85rem;
+            }
+            
+            .info-box strong {
+                font-size: 0.9rem;
+            }
+            
+            /* 只读字段优化 */
+            .readonly-field {
+                font-size: 0.85rem;
+                padding: 0.6rem;
+            }
+            
+            /* 按钮优化 */
+            .btn {
+                padding: 0.65rem 1.2rem;
+                font-size: 0.9rem;
+            }
+            
+            .btn-small {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            /* 表单导航按钮优化 */
+            .form-navigation-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
+                margin-top: 1.5rem;
+                padding-top: 1rem;
+            }
+            
+            .form-navigation-buttons .btn {
+                max-width: 100%;
+                width: 100%;
+                font-size: 0.95rem;
+                padding: 0.75rem 1rem;
+            }
+            
+            /* 保存按钮容器优化 */
+            .save-button-container {
+                padding: 1.5rem 1rem;
+                margin-bottom: 1rem;
+            }
+            
+            .save-button-container .btn {
+                font-size: 1rem;
+                padding: 0.85rem 2rem;
+                width: 100%;
+            }
+            
+            /* 标签页优化 */
+            .tab-button { 
+                font-size: 0.9rem; 
+                padding: 0.85rem 0.5rem; 
+            }
+            
+            .tab-content {
+                padding: 1rem;
+            }
+            
+            /* 日志列表项优化 */
+            .log-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1rem;
+            }
+            
+            .log-item-actions {
+                margin-top: 0.75rem;
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            
+            .log-item-actions .btn {
+                flex: 1 1 45%;
+                min-width: 120px;
+                font-size: 0.85rem;
+                padding: 0.5rem 0.75rem;
+            }
+            
+            /* 查询行优化 */
+            .query-row {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .query-row .form-group {
+                width: 100%;
+            }
+            
+            .query-row .btn {
+                width: 100%;
+            }
+            
+            /* 日历侧边栏优化 */
+            .calendar-sidebar {
+                padding: 1rem 0.75rem;
+            }
+            
+            .calendar-header {
+                margin-bottom: 1rem;
+                padding-bottom: 0.75rem;
+                gap: 0.75rem;
+            }
+            
+            .calendar-month-title {
+                font-size: 1rem;
+                min-width: 100px;
+            }
+            
+            .calendar-nav-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 1rem;
+            }
+            
+            .calendar-year-select {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.85rem;
+            }
+            
+            .calendar-day {
+                font-size: 0.85rem;
+            }
+            
+            .calendar-stats {
+                padding: 1rem;
+                margin-top: 1.5rem;
+            }
+            
+            .stats-title {
+                font-size: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .stat-item {
+                padding: 0.6rem 0;
+            }
+            
+            .stat-label {
+                font-size: 0.85rem;
+            }
+            
+            .stat-value {
+                font-size: 0.9rem;
+            }
+            
+            .calendar-legend {
+                padding: 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            .legend-title {
+                font-size: 0.85rem;
+                margin-bottom: 0.6rem;
+            }
+            
+            .legend-item {
+                gap: 0.4rem;
+                margin-bottom: 0.4rem;
+                font-size: 0.8rem;
+            }
+            
+            .legend-color {
+                width: 20px;
+                height: 20px;
+            }
+            
+            /* 快捷操作按钮优化 */
+            .calendar-actions {
+                margin-top: 1rem;
+            }
+            
+            .action-btn {
+                padding: 0.65rem;
+                font-size: 0.85rem;
+            }
+            
+            /* 时间轴月份优化 */
+            .timeline-months {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+            }
+            
+            .timeline-month {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+            
+            /* 时间轴图例优化 */
+            .timeline-legend {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+            
+            .timeline-legend-item {
+                font-size: 0.8rem;
+            }
+            
+            /* 步骤指示器优化 */
+            .form-step-indicator {
+                padding: 0.75rem 0.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .step-item {
+                gap: 0.3rem;
+            }
+            
+            .step-number {
+                width: 36px;
+                height: 36px;
+                font-size: 0.95rem;
+            }
+            
+            .step-label {
+                font-size: 0.75rem;
+            }
+            
+            .step-line {
+                width: 30px;
+                margin: 0 0.3rem;
+            }
+        }
+        
+        /* 超小屏幕优化（手机竖屏） */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 0.5rem;
+            }
+            
+            .header {
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            
+            .card-header {
+                font-size: 1rem;
+                padding: 0.85rem;
+            }
+            
+            .card-body {
+                padding: 0.75rem;
+            }
+            
+            .form-group {
+                margin-bottom: 0.85rem;
+            }
+            
+            .form-group label {
+                font-size: 0.85rem;
+            }
+            
+            .form-control {
+                padding: 0.55rem;
+                font-size: 0.85rem;
+            }
+            
+            .image-upload-area {
+                padding: 1.25rem 0.75rem;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .gallery-item img {
+                height: 150px;
+            }
+            
+            #recorder-avatar {
+                width: 35px !important;
+                height: 35px !important;
+            }
+            
+            .section-title {
+                font-size: 0.95rem;
+            }
+            
+            .info-box {
+                padding: 0.6rem;
+                font-size: 0.8rem;
+            }
+            
+            .btn {
+                font-size: 0.85rem;
+                padding: 0.6rem 1rem;
+            }
+            
+            .form-navigation-buttons .btn {
+                font-size: 0.9rem;
+                padding: 0.7rem 0.85rem;
+            }
+            
+            .tab-button {
+                font-size: 0.85rem;
+                padding: 0.75rem 0.4rem;
+            }
+            
+            .calendar-sidebar {
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .calendar-header {
+                gap: 0.5rem;
+            }
+            
+            .calendar-month-title {
+                font-size: 0.95rem;
+                min-width: 90px;
+            }
+            
+            .calendar-nav {
+                gap: 0.5rem;
+            }
+            
+            .calendar-nav-btn {
+                width: 26px;
+                height: 26px;
+                font-size: 0.95rem;
+            }
+            
+            .calendar-year-select {
+                font-size: 0.8rem;
+                padding: 0.35rem 0.5rem;
+            }
+            
+            .calendar-day {
+                font-size: 0.8rem;
+            }
+            
+            .timeline-months {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .step-number {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+            
+            .step-label {
+                font-size: 0.7rem;
+            }
+            
+            .step-line {
+                width: 20px;
+                margin: 0 0.2rem;
+            }
+            
+            /* 隐藏步骤间的连接线，改为垂直布局 */
+            .form-step-indicator {
+                flex-direction: column;
+                padding: 0.5rem;
+            }
+            
+            .step-line {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌿 生长过程管理</h1>
+        <p class="subtitle">记录并管理茶园的每日生长情况和月度总结</p>
+        <div class="nav-buttons">
+            <a href="/dashboard" class="nav-btn">← 返回仪表板</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 提示信息 -->
+        <div id="message-container"></div>
+
+        <!-- 标签页导航 -->
+        <div class="tabs-navigation">
+            <div class="tabs-nav">
+                <button class="tab-button active" data-tab="daily">📅 每日生长管理</button>
+                <button class="tab-button" data-tab="monthly">📊 月份总结</button>
+            </div>
+        </div>
+
+        <!-- 标签页内容 -->
+        <!-- 第一个标签页：每日生长管理 -->
+        <div id="daily-tab" class="tab-content active">
+            <!-- 左右分栏布局 -->
+            <div class="split-layout">
+                <!-- 左侧日历栏 -->
+                <div class="calendar-sidebar">
+                    <!-- 日历头部 -->
+                    <div class="calendar-header">
+                        <div class="calendar-nav">
+                            <button class="calendar-nav-btn" onclick="changeMonth(-1)">▼</button>
+                            <span class="calendar-month-title" id="calendar-title">2025年10月</span>
+                            <button class="calendar-nav-btn" onclick="changeMonth(1)">▲</button>
+                        </div>
+                        <select class="calendar-year-select" id="calendar-year-select" onchange="changeYear(this.value)">
+                            <!-- 动态填充近3年 -->
+                        </select>
+                    </div>
+                    
+                    <!-- 日历网格 -->
+                    <div class="calendar-grid">
+                        <div class="calendar-weekdays">
+                            <div class="calendar-weekday">日</div>
+                            <div class="calendar-weekday">一</div>
+                            <div class="calendar-weekday">二</div>
+                            <div class="calendar-weekday">三</div>
+                            <div class="calendar-weekday">四</div>
+                            <div class="calendar-weekday">五</div>
+                            <div class="calendar-weekday">六</div>
+                        </div>
+                        <div class="calendar-days" id="calendar-days">
+                            <!-- 动态生成日期 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 统计面板 -->
+                    <div class="calendar-stats">
+                        <div class="stats-title">📊 本月统计</div>
+                        <div class="stat-item">
+                            <span class="stat-label">🟢 采摘日</span>
+                            <span class="stat-value stat-harvest" id="stat-harvest">0 天</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">🔵 农事日</span>
+                            <span class="stat-value stat-farming" id="stat-farming">0 天</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">🟡 普通记录</span>
+                            <span class="stat-value stat-normal" id="stat-normal">0 天</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">⚪ 未记录</span>
+                            <span class="stat-value stat-empty" id="stat-empty">0 天</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">📈 记录率</span>
+                            <span class="stat-value" id="stat-rate">0%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 图例说明 -->
+                    <div class="calendar-legend">
+                        <div class="legend-title">📖 图例说明</div>
+                        <div class="legend-item">
+                            <div class="legend-color harvest"></div>
+                            <span>有采摘记录</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color farming"></div>
+                            <span>有农事活动</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color normal"></div>
+                            <span>有普通记录</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color empty"></div>
+                            <span>无记录</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 快捷操作 -->
+                    <div class="calendar-actions">
+                        <button class="action-btn action-btn-primary" onclick="quickAddToday()">
+                            📝 新增今日记录
+                        </button>
+                        <button class="action-btn action-btn-secondary" onclick="jumpToToday()">
+                            📅 跳转到今天
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 右侧内容区 -->
+                <div class="content-main">
+                    <!-- 编辑模式提示 -->
+                    <div id="editing-mode-banner" class="editing-mode-banner hidden">
+                        <div>
+                            <strong>📝 编辑模式</strong>
+                            <span id="editing-date-display" style="margin-left: 1rem; color: #666;"></span>
+                        </div>
+                        <button type="button" class="btn btn-warning btn-small" onclick="cancelEdit()">
+                            ❌ 取消编辑
+                        </button>
+                    </div>
+
+                    <!-- 隐藏字段：存储正在编辑的日志ID -->
+                    <input type="hidden" id="editing-log-id">
+
+            <!-- 步骤指示器 -->
+            <div class="form-step-indicator">
+                <div class="step-item active" id="step-indicator-1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">卡片信息</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-item" id="step-indicator-2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">详情信息</div>
+                </div>
+            </div>
+
+            <!-- 主表单 -->
+            <form id="daily-log-form">
+                <!-- 第一部分：卡片信息 -->
+                <div class="form-card form-page" id="card-info-section">
+                    <div class="card-header">📋 每日日志卡片信息</div>
+                    <div class="card-body">
+                        <!-- 主图 -->
+                        <div class="form-group">
+                            <label>主图 <span class="required">*</span></label>
+                            <div class="image-upload-area" onclick="document.getElementById('main-image-input').click()">
+                                <p style="margin: 0; font-size: 1rem; color: #666;">
+                                    📷 点击上传主图<br>
+                                    <small style="color: #999;">支持 JPG、PNG、AVIF 格式，最大 5MB</small>
+                                </p>
+                            </div>
+                            <input type="file" id="main-image-input" accept="image/*" style="display: none;">
+                            
+                            <div id="main-image-preview-container" class="image-preview-container hidden">
+                                <img id="main-image-preview" class="image-preview" alt="主图预览">
+                                <div class="image-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('main-image-input').click()">
+                                        🔄 替换图片
+                                    </button>
+                                    <button type="button" class="btn btn-danger" onclick="removeMainImage()">
+                                        🗑️ 删除主图
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="main-image-url">
+                        </div>
+
+                        <!-- 基本信息 -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="log-date">日期 <span class="required">*</span></label>
+                                <input type="date" id="log-date" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="weather">天气</label>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <img id="weather-icon-preview" src="" alt="" style="width: 32px; height: 32px; display: none; object-fit: contain;">
+                                    <select id="weather" class="form-control" style="flex: 1;">
+                                        <option value="">加载中...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>温度范围</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="min-temperature" class="form-control" placeholder="最低温" style="flex: 1;">
+                                    <span>~</span>
+                                    <input type="number" id="max-temperature" class="form-control" placeholder="最高温" style="flex: 1;">
+                                    <span>℃</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="plot-id">地块信息</label>
+                                <select id="plot-id" class="form-control">
+                                    <option value="">加载中...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="recorder-name">记录人</label>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div id="recorder-avatar" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid #ddd; background: #f0f0f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <span style="color: #999; font-size: 0.8rem;">暂无</span>
+                                    </div>
+                                    <select id="recorder-name" class="form-control" style="flex: 1;" onchange="handleRecorderChange()">
+                                        <option value="">选择记录人...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="farm-activity-type">农事活动</label>
+                                <select id="farm-activity-type" class="form-control">
+                                    <option value="无">无</option>
+                                    <option value="施肥">🌱 施肥</option>
+                                    <option value="修剪">✂️ 修剪</option>
+                                    <option value="灌溉">💧 灌溉</option>
+                                    <!-- ❌ 采摘选项已移除 - 请在"批次追溯管理"中录入采摘记录 -->
+                                    <option value="异常">⚠️ 异常</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- ℹ️ 采摘记录统一管理说明 -->
+                        <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+                            <strong>📢 采摘记录管理说明：</strong>
+                            <p style="margin: 0.5rem 0 0 0;">
+                                所有采摘记录请前往 <a href="/admin/traceability-management" style="color: #d84315; font-weight: 600; text-decoration: none;">🔍 批次追溯管理</a> 页面进行统一录入和管理。
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="summary">核心日志摘要 <span class="required">*</span></label>
+                            <textarea id="summary" class="form-control" rows="4" required placeholder="请简要描述今日茶园生长情况..."></textarea>
+                        </div>
+
+                        <!-- 导航按钮 -->
+                        <div class="form-navigation-buttons">
+                            <button type="button" class="btn btn-secondary" onclick="cancelCardEdit()">
+                                ← 取消
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="goToDetailSection()">
+                                下一步 →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二部分：详情页信息 -->
+                <div class="form-card form-page" id="detail-section" style="display: none;">
+                    <div class="card-header">📸 每日生长详情页信息</div>
+                    <div class="card-body">
+                        <!-- 图片画廊 -->
+                        <div class="form-group">
+                            <label>图片画廊</label>
+                            <div class="image-upload-area" onclick="document.getElementById('gallery-input').click()">
+                                <p style="margin: 0; font-size: 1rem; color: #666;">
+                                    📷 点击上传多张图片<br>
+                                    <small style="color: #999;">可一次选择多张图片</small>
+                                </p>
+                            </div>
+                            <input type="file" id="gallery-input" accept="image/*" multiple style="display: none;">
+                            <div id="gallery-preview" class="gallery-grid"></div>
+                        </div>
+
+                        <!-- 只读联动信息 -->
+                        <div class="section-title" style="margin-top: 2rem;">📌 拍摄信息（自动同步）</div>
+                        <div class="info-box">
+                            <span class="info-icon">ℹ️</span>
+                            以下信息将自动从上方"卡片信息"中同步
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>拍摄日期</label>
+                                <input type="text" id="photo-date" class="form-control readonly-field" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>地块信息</label>
+                                <input type="text" id="photo-plot" class="form-control readonly-field" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>拍摄人</label>
+                                <input type="text" id="photo-person" class="form-control readonly-field" readonly>
+                            </div>
+                        </div>
+
+                        <!-- 环境数据 -->
+                        <div class="section-title" style="margin-top: 2rem;">🌡️ 环境数据</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sunshine-hours">日照时间</label>
+                                <input type="text" id="sunshine-hours" class="form-control" placeholder="例如：8小时">
+                            </div>
+                            <div class="form-group">
+                                <label for="rainfall">今日降水</label>
+                                <input type="text" id="rainfall" class="form-control" placeholder="例如：5mm">
+                            </div>
+                            <div class="form-group">
+                                <label for="avg-temperature">平均温度</label>
+                                <input type="text" id="avg-temperature" class="form-control" placeholder="例如：22°C">
+                            </div>
+                            <div class="form-group">
+                                <label for="humidity">湿度</label>
+                                <input type="text" id="humidity" class="form-control" placeholder="例如：65%">
+                            </div>
+                        </div>
+
+                        <!-- 详细日记 -->
+                        <div class="section-title" style="margin-top: 2rem;">📝 详细日记</div>
+                        <div class="form-group">
+                            <label for="full-log">生长日记</label>
+                            <textarea id="full-log" class="form-control" rows="6" placeholder="详细记录今日茶园生长情况..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="phenological-observation">物候观察</label>
+                            <textarea id="phenological-observation" class="form-control" rows="4" placeholder="记录植物生长阶段、物候现象等..."></textarea>
+                        </div>
+
+                        <!-- 农事活动详情 -->
+                        <div id="farm-activity-detail-section" class="hidden">
+                            <div class="section-title" style="margin-top: 2rem;">🚜 农事活动详情</div>
+                            <div class="form-group">
+                                <label id="activity-details-label" for="farm-activity-log">活动详细记录</label>
+                                <textarea id="farm-activity-log" class="form-control" rows="5" placeholder="详细描述农事活动的内容、过程等..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 异常事件记录 -->
+                        <div id="abnormal-event-section" class="hidden">
+                            <div class="section-title" style="margin-top: 2rem;">⚠️ 异常事件记录</div>
+                            <div class="info-box" style="background: #fff3cd; border-left-color: #ffc107; margin-bottom: 1rem;">
+                                <span class="info-icon">💡</span>
+                                如果当天发生异常情况（如病虫害、自然灾害等），请填写以下信息。
+                            </div>
+                            <div class="form-group">
+                                <label for="abnormal-title">异常标题</label>
+                                <input type="text" id="abnormal-title" class="form-control" placeholder="例如：发现病虫害">
+                            </div>
+                            <div class="form-group">
+                                <label for="abnormal-description">异常描述</label>
+                                <textarea id="abnormal-description" class="form-control" rows="3" placeholder="详细描述异常情况..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="abnormal-measures">已采取措施</label>
+                                <input type="text" id="abnormal-measures" class="form-control" placeholder="例如：已喷洒有机农药">
+                            </div>
+                        </div>
+
+                        <!-- 导航按钮 - 第二页 -->
+                        <div class="form-navigation-buttons">
+                            <button type="button" class="btn btn-secondary" onclick="goToPreviousPage()">
+                                ← 上一步
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="saveLog()" id="save-btn">
+                                💾 保存日志
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+                </div>
+                <!-- 右侧内容区结束 -->
+            </div>
+            <!-- 左右分栏布局结束 -->
+        </div>
+        <!-- 第一个标签页结束 -->
+
+        <!-- 第二个标签页：月份总结 -->
+        <div id="monthly-tab" class="tab-content">
+            <!-- 编辑模式提示 -->
+            <div id="editing-summary-banner" class="editing-mode-banner hidden">
+                <div>
+                    <strong>📝 编辑模式</strong>
+                    <p style="margin: 0.25rem 0 0 0;">正在编辑月度总结，修改完成后点击保存按钮</p>
+                </div>
+                <button type="button" class="btn btn-warning btn-small" onclick="cancelSummaryEdit()">
+                    ❌ 取消编辑 / 新增总结
+                </button>
+            </div>
+
+            <!-- 隐藏字段：存储正在编辑的总结ID -->
+            <input type="hidden" id="editing-summary-id">
+
+            <!-- 时间轴选择器 -->
+            <div class="timeline-selector">
+                <div class="timeline-header">
+                    <div class="timeline-title">📅 月度总结时间轴</div>
+                    <div class="timeline-year-nav">
+                        <button class="year-nav-btn" onclick="changeTimelineYear(-1)">◀</button>
+                        <span class="current-year-display" id="timeline-year">2025年</span>
+                        <button class="year-nav-btn" onclick="changeTimelineYear(1)">▶</button>
+                    </div>
+                </div>
+                
+                <div class="timeline-months" id="timeline-months">
+                    <!-- 动态生成12个月份卡片 -->
+                </div>
+                
+                <div class="timeline-legend">
+                    <div class="timeline-legend-item">
+                        <div class="timeline-legend-color summary"></div>
+                        <span>🟢 已生成总结</span>
+                    </div>
+                    <div class="timeline-legend-item">
+                        <div class="timeline-legend-color logs"></div>
+                        <span>🟡 待生成总结</span>
+                    </div>
+                    <div class="timeline-legend-item">
+                        <div class="timeline-legend-color empty"></div>
+                        <span>⚪ 无数据</span>
+                    </div>
+                </div>
+                
+                <div class="year-quick-select" id="year-quick-select">
+                    <!-- 动态生成近3年的快速选择按钮 -->
+                </div>
+            </div>
+
+            <div class="form-card">
+                <div class="card-header">📊 月度汇总管理</div>
+                <div class="card-body">
+                    <div class="query-row">
+                        <div class="form-group">
+                            <label for="summary-month">选择月份</label>
+                            <input type="month" id="summary-month" class="form-control">
+                        </div>
+                        <button type="button" class="btn" onclick="generateSummary()">🔄 生成/刷新本月总结</button>
+                    </div>
+
+                    <!-- 汇总显示区域 -->
+                    <div id="summary-display" class="summary-display hidden">
+                        <div class="info-box" style="background: #e8f5e9; border-left-color: #66bb6a;">
+                            <span class="info-icon">✏️</span>
+                            所有数据均可手动编辑。修改后请点击底部的"保存所有总结修改"按钮。
+                        </div>
+
+                        <!-- 顶部影像画廊管理 -->
+                        <div class="summary-section">
+                            <h3>🖼️ 顶部影像画廊</h3>
+                            <div class="form-group">
+                                <label>上传图片/视频</label>
+                                <div class="image-upload-area" onclick="document.getElementById('gallery-upload-input').click()">
+                                    <p style="margin: 0; font-size: 1rem; color: #666;">
+                                        📷 点击上传图片或视频<br>
+                                        <small style="color: #999;">可一次选择多个文件，支持 JPG、PNG、AVIF、MP4 等格式</small>
+                                    </p>
+                                </div>
+                                <input type="file" id="gallery-upload-input" accept="image/*,video/*" multiple style="display: none;">
+                            </div>
+
+                            <!-- 画廊预览区域 -->
+                            <div id="top-gallery-preview" class="gallery-grid"></div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>📈 采摘统计</h3>
+                            <div class="info-box" style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+                                <strong>💡 温馨提示：</strong>
+                                <p style="margin: 0.5rem 0 0 0;">
+                                    采摘统计数据由系统自动从 <a href="/admin/traceability-management" style="color: #d84315; font-weight: 600; text-decoration: none;">🔍 批次追溯管理</a> 中的采摘记录计算生成。
+                                    <br>如需修改采摘数据，请前往该页面进行管理。
+                                </p>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="harvest-count">采摘次数（自动生成）</label>
+                                    <input type="number" id="harvest-count" class="form-control" min="0" step="1" placeholder="由系统自动计算" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                                </div>
+                                <div class="form-group">
+                                    <label for="harvest-weight">总重量（公斤）（自动生成）</label>
+                                    <input type="number" id="harvest-weight" class="form-control" min="0" step="0.1" placeholder="由系统自动计算" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>📅 农事日历</h3>
+                            <div class="form-group">
+                                <textarea id="farm-calendar-display" class="form-control" rows="6" placeholder="例如：&#10;3日 施肥&#10;15日 修剪&#10;28日 采摘"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>⚠️ 异常事件汇总</h3>
+                            <div class="form-group">
+                                <textarea id="abnormal-events-display" class="form-control" rows="5" placeholder="例如：&#10;2025-01-15 发现病虫害，已喷洒有机农药&#10;2025-01-20 部分茶树叶片发黄，增加施肥"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>🌤️ 气候总结</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="avg-temp-display">平均温度</label>
+                                    <input type="text" id="avg-temp-display" class="form-control" placeholder="例如：17~25℃">
+                                </div>
+                                <div class="form-group">
+                                    <label for="total-precipitation-display">总降水</label>
+                                    <input type="text" id="total-precipitation-display" class="form-control" placeholder="例如：约5天有降水">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>📝 下月计划</h3>
+                            <div class="form-group">
+                                <textarea id="next-month-plan" class="form-control" rows="8" placeholder="请输入下月计划，每行一条..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 统一保存按钮 -->
+                        <div class="save-button-container" style="margin-top: 2rem; display: flex; gap: 1rem; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <button type="button" class="btn" onclick="saveAllSummaryChanges()">💾 保存所有总结修改</button>
+                                <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                                    保存后将更新所有已修改的统计数据
+                                </p>
+                            </div>
+                            <div id="delete-summary-container" style="display: none;">
+                                <button type="button" class="btn btn-danger" onclick="deleteCurrentSummary()">🗑️ 删除此月总结</button>
+                                <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                                    此操作不可撤销
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 助手集成 -->
+    <script src="https://o.alicdn.com/appflow/chatbot/v1/AppflowChatSDK.js"></script>
+    <script>
+        window.APPFLOW_CHAT_SDK.init({
+            integrateConfig: {
+                integrateId: 'cit-4d7f8b8ad2c5463ca79e',
+                domain: { requestDomain: 'https://1524787808648067.appflow.aliyunnest.com' },
+                draggable: true
+            }
+        });
+    </script>
+
+    <script>
+        // ==================== 全局变量 ====================
+        let mainImageUrl = '';
+        let galleryUrls = [];
+        let topGalleryUrls = []; // 顶部影像画廊 URL 数组
+        let availablePlots = [];
+        let existingDates = [];
+        let currentSummaryId = null;
+        
+        // 日历相关变量
+        let currentCalendarYear = new Date().getFullYear();
+        let currentCalendarMonth = new Date().getMonth(); // 0-11
+        let selectedDate = null;
+        let monthLogsData = {}; // 存储当月的日志数据 {date: logData}
+        let monthHarvestDates = new Set(); // 存储当月有采摘记录的日期
+        
+        // 时间轴相关变量
+        let currentTimelineYear = new Date().getFullYear();
+        let monthlySummaries = {}; // 存储已生成的月度总结
+        let monthlyLogsCount = {}; // 存储每月的日志数量
+        
+        const FARM_ACTIVITY_ENUM_TO_LABEL = {
+            NONE: '无',
+            无: '无',
+            FERTILIZE: '施肥',
+            施肥: '施肥',
+            PRUNE: '修剪',
+            修剪: '修剪',
+            IRRIGATE: '灌溉',
+            灌溉: '灌溉',
+            HARVEST: '采摘',
+            采摘: '采摘',
+            ABNORMAL: '异常',
+            异常: '异常'
+        };
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('log-date').value = today;
+            
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            
+            loadPlots();
+            loadRecorders(); // 加载记录人列表
+            loadWeatherOptions(); // 加载天气选项
+            setupEventListeners();
+            setupTabNavigation();
+            updateSyncFields();
+            
+            // 初始化日历
+            initCalendar();
+            initYearSelector();
+            renderCalendar();
+            loadMonthLogs(); // 加载当月日志数据
+            
+            // 初始化时间轴
+            initTimeline();
+            
+            // 加载月度总结列表 - 已废弃，使用时间轴代替
+            // fetchAndRenderSummaries();
+            
+            // 设置顶部画廊上传事件
+            document.getElementById('gallery-upload-input').addEventListener('change', handleTopGalleryUpload);
+        });
+
+        // ==================== 标签页切换 ====================
+        function setupTabNavigation() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    
+                    // 移除所有活动状态
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // 添加活动状态到当前标签
+                    button.classList.add('active');
+                    document.getElementById(`${targetTab}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // ==================== 数据加载 ====================
+        async function loadPlots() {
+            try {
+                const response = await fetch('/api/plots');
+                const result = await response.json();
+                if (result.success && result.data) {
+                    availablePlots = result.data;
+                    const plotSelect = document.getElementById('plot-id');
+                    plotSelect.innerHTML = '<option value="">请选择地块</option>';
+                    result.data.forEach(plot => {
+                        const option = document.createElement('option');
+                        option.value = plot._id;
+                        option.textContent = plot.name;
+                        plotSelect.appendChild(option);
+                    });
+                    console.log('✅ 成功加载', result.data.length, '个地块');
+                }
+            } catch (error) {
+                console.error('加载地块列表失败:', error);
+                document.getElementById('plot-id').innerHTML = '<option value="">加载失败</option>';
+            }
+        }
+
+        async function loadExistingDates() {
+            // 在新的日历视图中，此函数已废弃
+            // 日期数据通过 loadMonthLogs() 和 monthLogsData 管理
+            console.log('loadExistingDates() 已废弃，使用 loadMonthLogs() 代替');
+        }
+
+        async function loadRecorders() {
+            try {
+                const response = await fetch('/api/personnel?role=记录人');
+                const result = await response.json();
+                if (result.success && result.data) {
+                    const recorderSelect = document.getElementById('recorder-name');
+                    recorderSelect.innerHTML = '<option value="">请选择记录人</option>';
+                    result.data.forEach(recorder => {
+                        const option = document.createElement('option');
+                        option.value = recorder.name;
+                        option.textContent = recorder.name;
+                        option.dataset.avatar = resolveAvatarUrl(recorder);
+                        recorderSelect.appendChild(option);
+                    });
+                    console.log('✅ 成功加载', result.data.length, '个记录人');
+                }
+            } catch (error) {
+                console.error('加载记录人列表失败:', error);
+                document.getElementById('recorder-name').innerHTML = '<option value="">加载失败</option>';
+            }
+        }
+
+        /**
+         * 统一处理不同字段命名与路径的头像 URL
+         */
+        function resolveAvatarUrl(recorder) {
+            if (!recorder || typeof recorder !== 'object') {
+                return '';
+            }
+
+            const avatarCandidates = [
+                recorder.avatar_url,
+                recorder.avatarUrl,
+                recorder.avatarURL,
+                recorder.avatar?.url,
+            ].filter(url => typeof url === 'string' && url.trim() !== '');
+
+            if (avatarCandidates.length === 0) {
+                return '';
+            }
+
+            const rawUrl = avatarCandidates[0].trim();
+
+            // 绝对或协议相对地址直接返回
+            if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith('//')) {
+                return rawUrl;
+            }
+
+            if (rawUrl.startsWith('/')) {
+                return rawUrl;
+            }
+
+            if (rawUrl.startsWith('uploads/')) {
+                return `/${rawUrl}`;
+            }
+
+            return `/uploads/avatars/${rawUrl}`;
+        }
+
+        /**
+         * 规范天气图标路径，兼容多种存储格式
+         */
+        function resolveWeatherIconUrl(iconValue) {
+            if (!iconValue) return '';
+
+            const rawUrl = (typeof iconValue === 'string' ? iconValue : iconValue?.icon || '').trim();
+            if (!rawUrl) return '';
+
+            if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith('//')) {
+                return rawUrl;
+            }
+
+            if (rawUrl.startsWith('/')) {
+                return rawUrl;
+            }
+
+            if (rawUrl.startsWith('public/')) {
+                return `/${rawUrl.replace(/^public\//, '')}`;
+            }
+
+            if (rawUrl.startsWith('uploads/')) {
+                return `/${rawUrl}`;
+            }
+
+            if (rawUrl.startsWith('weather/')) {
+                return `/${rawUrl}`;
+            }
+
+            return `/weather/${rawUrl}`;
+        }
+
+        // 天气图标映射表（全局变量）
+        let weatherIconMap = {};
+        
+        // 加载天气选项（从天气模板API获取）
+        async function loadWeatherOptions() {
+            try {
+                const response = await fetch('/api/weather-templates?active_only=true');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const weatherSelect = document.getElementById('weather');
+                    weatherSelect.innerHTML = '<option value="">请选择天气</option>';
+                    
+                    // 清空并重建图标映射
+                    weatherIconMap = {};
+                    
+                    result.data.forEach(weather => {
+                        const option = document.createElement('option');
+                        option.value = weather.name;
+                        option.textContent = weather.name;
+                        const iconSource = weather.svg_icon ?? weather.svgIcon ?? weather.icon ?? null;
+                        const iconUrl = resolveWeatherIconUrl(iconSource);
+                        if (iconUrl) {
+                            option.dataset.icon = iconUrl;
+                            weatherIconMap[weather.name] = iconUrl;
+                        } else {
+                            option.dataset.icon = '';
+                        }
+                        weatherSelect.appendChild(option);
+                    });
+                    
+                    // 添加change事件监听器来更新图标
+                    weatherSelect.removeEventListener('change', updateWeatherIcon); // 先移除旧监听器
+                    weatherSelect.addEventListener('change', updateWeatherIcon);
+                    
+                    console.log('✅ 成功加载', result.data.length, '个天气选项');
+                }
+            } catch (error) {
+                console.error('加载天气选项失败:', error);
+                // 如果加载失败，使用默认的天气选项
+                const weatherSelect = document.getElementById('weather');
+                weatherSelect.innerHTML = `
+                    <option value="">请选择天气</option>
+                    <option value="晴天">晴天</option>
+                    <option value="多云">多云</option>
+                    <option value="阴天">阴天</option>
+                    <option value="雨天">雨天</option>
+                `;
+                console.warn('⚠️ 使用默认天气选项');
+            }
+        }
+        
+        // 更新天气图标显示
+        function updateWeatherIcon() {
+            const weatherSelect = document.getElementById('weather');
+            const weatherIconPreview = document.getElementById('weather-icon-preview');
+            const selectedWeather = weatherSelect.value;
+            const selectedOption = weatherSelect.options[weatherSelect.selectedIndex];
+            const iconUrlFromMap = weatherIconMap[selectedWeather];
+            const iconUrl = iconUrlFromMap || selectedOption?.dataset.icon || '';
+            
+            if (selectedWeather && iconUrl) {
+                weatherIconPreview.src = iconUrl;
+                weatherIconPreview.style.display = 'block';
+            } else {
+                weatherIconPreview.style.display = 'none';
+                weatherIconPreview.src = '';
+            }
+        }
+
+        // ==================== 日历相关功能 ====================
+        
+        // 初始化日历
+        function initCalendar() {
+            currentCalendarYear = new Date().getFullYear();
+            currentCalendarMonth = new Date().getMonth();
+        }
+        
+        // 初始化年份选择器
+        function initYearSelector() {
+            const yearSelect = document.getElementById('calendar-year-select');
+            const currentYear = new Date().getFullYear();
+            yearSelect.innerHTML = '';
+            
+            // 生成近3年的选项
+            for (let i = -1; i <= 1; i++) {
+                const year = currentYear + i;
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + '年';
+                if (year === currentCalendarYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+        }
+        
+        // 渲染日历
+        function renderCalendar() {
+            const year = currentCalendarYear;
+            const month = currentCalendarMonth;
+            
+            // 更新标题
+            document.getElementById('calendar-title').textContent = `${year}年${month + 1}月`;
+            
+            // 获取本月第一天和最后一天
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const firstDayOfWeek = firstDay.getDay(); // 0-6
+            const daysInMonth = lastDay.getDate();
+            
+            // 生成日历格子
+            const daysContainer = document.getElementById('calendar-days');
+            daysContainer.innerHTML = '';
+            
+            // 填充空白格子
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                daysContainer.appendChild(emptyDay);
+            }
+            
+            // 填充日期格子
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                dayDiv.className = 'calendar-day';
+                dayDiv.textContent = day;
+                dayDiv.dataset.date = dateStr;
+                
+                // 判断日期类型
+                const logData = monthLogsData[dateStr];
+                const dateType = getDateType(logData, dateStr);
+                
+                if (dateType === 'harvest') {
+                    dayDiv.classList.add('has-harvest');
+                } else if (dateType === 'farming') {
+                    dayDiv.classList.add('has-farming');
+                } else if (dateType === 'normal') {
+                    dayDiv.classList.add('has-record');
+                } else {
+                    dayDiv.classList.add('no-record');
+                }
+                
+                // 今天标记
+                if (dateStr === todayStr) {
+                    dayDiv.classList.add('today');
+                }
+                
+                // 选中标记
+                if (selectedDate === dateStr) {
+                    dayDiv.classList.add('selected');
+                }
+                
+                // 点击事件
+                dayDiv.addEventListener('click', () => onDateClick(dateStr, logData));
+                
+                daysContainer.appendChild(dayDiv);
+            }
+            
+            // 更新统计
+            updateCalendarStats();
+        }
+        
+        // 判断日期类型
+        function getDateType(logData, dateStr) {
+            // 优先检查是否有采摘记录（从批次追溯管理）
+            if (monthHarvestDates.has(dateStr)) {
+                return 'harvest'; // 🟢 采摘日（最高优先级）
+            }
+            
+            if (!logData) return 'empty';
+            
+            // 兼容旧数据：检查每日日志中的采摘记录
+            if (logData.harvest_weight_kg > 0 || logData.farm_activity_type === '采摘') {
+                return 'harvest'; // 🟢 采摘日
+            }
+            
+            // 检查是否有农事活动
+            if (logData.farm_activity_type && logData.farm_activity_type !== '无') {
+                return 'farming'; // 🔵 农事日
+            }
+            
+            // 其他有记录的情况
+            return 'normal'; // 🟡 普通记录
+        }
+        
+        // 日期点击事件
+        async function onDateClick(dateStr, logData) {
+            selectedDate = dateStr;
+            
+            // 更新日历显示
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('selected');
+                if (day.dataset.date === dateStr) {
+                    day.classList.add('selected');
+                }
+            });
+            
+            // 如果有数据，加载编辑
+            if (logData) {
+                await editLogByDate(dateStr);
+            } else {
+                // 新增模式
+                startNewLog(dateStr);
+            }
+        }
+        
+        function mapFarmActivityToDisplay(value) {
+            if (!value) return '无';
+            const cleanValue = String(value).trim();
+            return FARM_ACTIVITY_ENUM_TO_LABEL[cleanValue] || cleanValue || '无';
+        }
+        
+        function normalizeLogForForm(rawLog) {
+            if (!rawLog || typeof rawLog !== 'object') return null;
+            
+            const normalized = { ...rawLog };
+            
+            // 统一 ID
+            normalized._id = rawLog._id || rawLog.id || rawLog.log_id || null;
+            normalized.id = normalized._id || rawLog.id || null;
+            
+            // 日期统一为 ISO 字符串
+            try {
+                normalized.date = typeof rawLog.date === 'string' 
+                    ? rawLog.date 
+                    : new Date(rawLog.date).toISOString();
+            } catch (error) {
+                console.warn('⚠️ 无法格式化日志日期:', rawLog.date, error);
+                normalized.date = rawLog.date || '';
+            }
+            
+            // 记录人
+            normalized.recorder_name = rawLog.recorder_name 
+                || rawLog.recorderName 
+                || rawLog.recorder?.name 
+                || '';
+            
+            // 地块
+            normalized.plot_id = rawLog.plot_id 
+                || rawLog.plotId 
+                || rawLog.plot?._id 
+                || rawLog.plot?.id 
+                || '';
+            
+            // 主图
+            normalized.main_image_url = rawLog.main_image_url 
+                || rawLog.mainImageUrl 
+                || rawLog.main_image?.url 
+                || '';
+            
+            // 天气
+            normalized.weather = rawLog.weather 
+                || rawLog.weather_info 
+                || (rawLog.weatherIcon ? { icon: rawLog.weatherIcon } : null) 
+                || null;
+            
+            // 画廊
+            normalized.detail_gallery = rawLog.detail_gallery 
+                || rawLog.detailGallery 
+                || rawLog.gallery 
+                || [];
+            
+            // 农事相关
+            normalized.farm_activity_type = mapFarmActivityToDisplay(
+                rawLog.farm_activity_type || rawLog.farmActivityType || ''
+            );
+            normalized.farm_activity_log = rawLog.farm_activity_log 
+                || rawLog.farmActivityLog 
+                || '';
+            
+            // 环境数据
+            normalized.environment_data = rawLog.environment_data 
+                || rawLog.environmentData 
+                || null;
+            
+            normalized.phenological_observation = rawLog.phenological_observation 
+                || rawLog.phenologicalObservation 
+                || '';
+            
+            normalized.abnormal_event = rawLog.abnormal_event 
+                || rawLog.abnormalEvent 
+                || null;
+            
+            normalized.harvest_weight_kg = rawLog.harvest_weight_kg 
+                || rawLog.harvestWeightKg 
+                || 0;
+            
+            normalized.summary = rawLog.summary || rawLog.fullSummary || '';
+            normalized.recorder_id = rawLog.recorder_id || rawLog.recorderId || rawLog.recorder?.id || null;
+            const recorderAvatarPayload = rawLog.recorder
+                ? {
+                    ...rawLog.recorder,
+                    avatar_url: rawLog.recorder.avatar_url ?? rawLog.recorder_avatar ?? rawLog.recorder?.avatarUrl,
+                }
+                : rawLog.recorder_avatar
+                    ? { avatar_url: rawLog.recorder_avatar }
+                    : null;
+            normalized.recorder_avatar = resolveAvatarUrl(recorderAvatarPayload) || '';
+            
+            return normalized;
+        }
+        
+        function populateFormWithLocalLog(log) {
+            const normalizedLog = normalizeLogForForm(log);
+            if (!normalizedLog) return;
+            
+            const logId = normalizedLog._id || normalizedLog.id || '';
+            const dateOnly = normalizedLog.date ? normalizedLog.date.split('T')[0] : '';
+            
+            document.getElementById('editing-log-id').value = logId;
+            document.getElementById('editing-mode-banner').classList.remove('hidden');
+            document.getElementById('log-date').value = dateOnly || '';
+            document.getElementById('editing-date-display').textContent = dateOnly 
+                ? `- 正在编辑：${formatDateChinese(dateOnly)}`
+                : '';
+            
+            fillFormWithLogData(normalizedLog);
+            
+            // 记录人头像
+            if (normalizedLog.recorder_avatar) {
+                updateAvatar('recorder-avatar', normalizedLog.recorder_avatar);
+            } else if (normalizedLog.recorder_name) {
+                // 如果头像缺失但选择中含有 avatar 数据，尝试匹配
+                const recorderSelect = document.getElementById('recorder-name');
+                if (recorderSelect) {
+                    const option = Array.from(recorderSelect.options).find(opt => opt.value === normalizedLog.recorder_name);
+                    const avatarUrl = option?.dataset.avatar || '';
+                    updateAvatar('recorder-avatar', avatarUrl);
+                }
+            } else {
+                updateAvatar('recorder-avatar', '');
+            }
+            
+            document.getElementById('save-btn').innerHTML = logId ? '💾 更新此条日志' : '💾 保存此条日志';
+            document.getElementById('card-info-section').style.display = 'block';
+            document.getElementById('detail-section').style.display = 'none';
+            document.getElementById('step-indicator-1').classList.add('active');
+            document.getElementById('step-indicator-2').classList.remove('active');
+            
+            const formContainer = document.querySelector('.content-main');
+            if (formContainer) {
+                formContainer.scrollTop = 0;
+            }
+            
+            showMessage(`✅ 已加载 ${dateOnly ? formatDateChinese(dateOnly) : '当前'} 的日志，可以继续编辑`, 'success');
+        }
+        
+        // 根据点击日期查找完整日志（兼容不同时间格式）
+        function getGrowthLogDetail(dateStr) {
+            let log = monthLogsData[dateStr];
+            
+            if (!log) {
+                const logs = Object.values(monthLogsData);
+                log = logs.find(entry => {
+                    if (!entry || !entry.date) return false;
+                    
+                    try {
+                        const dateValue = typeof entry.date === 'string' ? entry.date : new Date(entry.date).toISOString();
+                        return dateValue.startsWith(dateStr);
+                    } catch (error) {
+                        console.warn('⚠️ 无法解析日志日期:', entry.date, error);
+                        return false;
+                    }
+                }) || null;
+            }
+            
+            if (log) {
+                const normalizedLog = normalizeLogForForm(log);
+                populateFormWithLocalLog(normalizedLog);
+                return normalizedLog;
+            }
+            
+            return null;
+        }
+        
+        // 根据日期编辑日志
+        async function editLogByDate(dateStr) {
+            const logData = getGrowthLogDetail(dateStr);
+            if (!logData) {
+                console.warn('⚠️ 未在 monthLogsData 中找到对应日期的日志，进入新增模式:', dateStr);
+                startNewLog(dateStr);
+            }
+        }
+        
+        // 开始新增日志
+        function startNewLog(dateStr) {
+            clearForm();
+            document.getElementById('log-date').value = dateStr;
+            document.getElementById('editing-log-id').value = '';
+            document.getElementById('editing-mode-banner').classList.add('hidden');
+            document.getElementById('editing-date-display').textContent = '';
+            document.getElementById('save-btn').innerHTML = '💾 保存此条日志';
+            
+            // 滚动到表单顶部
+            document.querySelector('.content-main').scrollTop = 0;
+            
+            showMessage(`准备新增 ${formatDateChinese(dateStr)} 的记录`, 'info');
+        }
+        
+        // 加载当月日志数据
+        async function loadMonthLogs() {
+            try {
+                const yearMonth = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}`;
+                
+                // 1. 加载每日生长日志
+                const response = await fetch(`/api/growth-logs?month=${yearMonth}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    monthLogsData = {};
+                    result.data.forEach(log => {
+                        const dateStr = log.date.split('T')[0];
+                        monthLogsData[dateStr] = log;
+                    });
+                    console.log('✅ 加载当月日志:', Object.keys(monthLogsData).length, '条');
+                } else {
+                    console.error('加载月份日志失败:', result.message);
+                }
+                
+                // 2. 加载采摘记录（批次追溯管理）
+                await loadMonthHarvestRecords(yearMonth);
+                
+                // 3. 渲染日历
+                renderCalendar();
+                
+            } catch (error) {
+                console.error('加载月份日志出错:', error);
+            }
+        }
+        
+        // 加载当月采摘记录
+        async function loadMonthHarvestRecords(yearMonth) {
+            try {
+                const response = await fetch(`/api/harvest-records?month=${yearMonth}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    monthHarvestDates.clear();
+                    result.data.forEach(record => {
+                        const harvestDateValue = record.harvest_date || record.harvestDate;
+                        if (!harvestDateValue) {
+                            console.warn('⚠️ 采摘记录缺少 harvest_date 字段，已跳过:', record.id || record);
+                            return;
+                        }
+                        const dateStr = harvestDateValue.split('T')[0];
+                        monthHarvestDates.add(dateStr);
+                    });
+                    console.log('✅ 加载当月采摘记录:', monthHarvestDates.size, '天');
+                } else {
+                    console.error('加载采摘记录失败:', result.message);
+                    monthHarvestDates.clear();
+                }
+            } catch (error) {
+                console.error('加载采摘记录出错:', error);
+                monthHarvestDates.clear();
+            }
+        }
+        
+        // 更新日历统计
+        function updateCalendarStats() {
+            let harvestCount = 0;
+            let farmingCount = 0;
+            let normalCount = 0;
+            let totalDays = 0;
+            
+            // 获取本月总天数
+            const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+            totalDays = lastDay.getDate();
+            
+            // 统计各类型日期
+            // 1. 先统计每日日志
+            Object.entries(monthLogsData).forEach(([dateStr, log]) => {
+                const type = getDateType(log, dateStr);
+                if (type === 'harvest') harvestCount++;
+                else if (type === 'farming') farmingCount++;
+                else if (type === 'normal') normalCount++;
+            });
+            
+            // 2. 再统计没有每日日志但有采摘记录的日期
+            monthHarvestDates.forEach(dateStr => {
+                // 如果这个日期没有每日日志，则计入采摘日
+                if (!monthLogsData[dateStr]) {
+                    harvestCount++;
+                }
+            });
+            
+            const recordedCount = harvestCount + farmingCount + normalCount;
+            const emptyCount = totalDays - recordedCount;
+            const rate = Math.round((recordedCount / totalDays) * 100);
+            
+            document.getElementById('stat-harvest').textContent = `${harvestCount} 天`;
+            document.getElementById('stat-farming').textContent = `${farmingCount} 天`;
+            document.getElementById('stat-normal').textContent = `${normalCount} 天`;
+            document.getElementById('stat-empty').textContent = `${emptyCount} 天`;
+            document.getElementById('stat-rate').textContent = `${rate}%`;
+        }
+        
+        // 切换月份
+        function changeMonth(offset) {
+            currentCalendarMonth += offset;
+            
+            if (currentCalendarMonth > 11) {
+                currentCalendarMonth = 0;
+                currentCalendarYear++;
+            } else if (currentCalendarMonth < 0) {
+                currentCalendarMonth = 11;
+                currentCalendarYear--;
+            }
+            
+            renderCalendar();
+            loadMonthLogs();
+        }
+        
+        // 切换年份
+        function changeYear(year) {
+            currentCalendarYear = parseInt(year);
+            renderCalendar();
+            loadMonthLogs();
+        }
+        
+        // 快速跳转到今天
+        function jumpToToday() {
+            const today = new Date();
+            currentCalendarYear = today.getFullYear();
+            currentCalendarMonth = today.getMonth();
+            initYearSelector();
+            renderCalendar();
+            loadMonthLogs();
+        }
+        
+        // 快速新增今日记录
+        function quickAddToday() {
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
+            // 跳转到今天
+            jumpToToday();
+            
+            // 延迟一点再选中日期
+            setTimeout(() => {
+                const logData = monthLogsData[todayStr];
+                if (logData) {
+                    showMessage('今天已有记录，切换到编辑模式', 'info');
+                    onDateClick(todayStr, logData);
+                } else {
+                    onDateClick(todayStr, null);
+                }
+            }, 300);
+        }
+        
+        // 格式化日期为中文
+        function formatDateChinese(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+
+        // ==================== 时间轴选择器功能 ====================
+        
+        // 初始化时间轴
+        function initTimeline() {
+            initTimelineYearSelector();
+            renderTimeline();
+            loadTimelineData();
+        }
+        
+        // 初始化时间轴年份选择器
+        function initTimelineYearSelector() {
+            const quickSelectContainer = document.getElementById('year-quick-select');
+            const currentYear = new Date().getFullYear();
+            quickSelectContainer.innerHTML = '';
+            
+            // 生成近3年的快速选择按钮
+            for (let i = -1; i <= 1; i++) {
+                const year = currentYear + i;
+                const btn = document.createElement('button');
+                btn.className = 'year-quick-btn';
+                btn.textContent = year + '年';
+                btn.onclick = () => selectTimelineYear(year);
+                
+                if (year === currentTimelineYear) {
+                    btn.classList.add('active');
+                }
+                
+                quickSelectContainer.appendChild(btn);
+            }
+        }
+        
+        // 渲染时间轴
+        function renderTimeline() {
+            document.getElementById('timeline-year').textContent = currentTimelineYear + '年';
+            
+            const monthsContainer = document.getElementById('timeline-months');
+            monthsContainer.innerHTML = '';
+            
+            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                               '七月', '八月', '九月', '十月', '十一', '十二'];
+            
+            for (let month = 0; month < 12; month++) {
+                const monthKey = `${currentTimelineYear}-${String(month + 1).padStart(2, '0')}`;
+                const monthCard = document.createElement('div');
+                monthCard.className = 'month-card';
+                
+                // 判断月份状态
+                const hasSummary = monthlySummaries[monthKey];
+                const logsCount = monthlyLogsCount[monthKey] || 0;
+                
+                if (hasSummary) {
+                    monthCard.classList.add('has-summary');
+                    monthCard.innerHTML = `
+                        <div class="month-name">${monthNames[month]}</div>
+                        <div class="month-status">✓ 已生成</div>
+                    `;
+                } else if (logsCount > 0) {
+                    monthCard.classList.add('has-logs');
+                    monthCard.innerHTML = `
+                        <div class="month-name">${monthNames[month]}</div>
+                        <div class="month-status">${logsCount}条记录</div>
+                    `;
+                } else {
+                    monthCard.classList.add('empty');
+                    monthCard.innerHTML = `
+                        <div class="month-name">${monthNames[month]}</div>
+                        <div class="month-status">无数据</div>
+                    `;
+                }
+                
+                // 点击事件
+                monthCard.onclick = () => onMonthCardClick(currentTimelineYear, month, hasSummary, logsCount);
+                
+                monthsContainer.appendChild(monthCard);
+            }
+        }
+        
+        // 月份卡片点击事件
+        function onMonthCardClick(year, month, hasSummary, logsCount) {
+            const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+            
+            // 移除其他选中状态
+            document.querySelectorAll('.month-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 添加选中状态
+            event.target.closest('.month-card').classList.add('selected');
+            
+            if (hasSummary) {
+                // 加载并显示已有总结
+                loadAndDisplaySummary(monthKey);
+            } else if (logsCount > 0) {
+                // 提示生成总结
+                if (confirm(`${year}年${month + 1}月共有${logsCount}条记录。\n\n是否生成该月的月度总结？`)) {
+                    generateSummaryForMonth(monthKey);
+                }
+            } else {
+                // 无数据
+                showMessage(`${year}年${month + 1}月暂无记录`, 'error');
+            }
+        }
+        
+        // 加载并显示总结
+        async function loadAndDisplaySummary(monthKey) {
+            try {
+                showMessage(`正在加载 ${monthKey} 的总结...`, 'info');
+                
+                // 从已缓存的数据中获取
+                let summary = monthlySummaries[monthKey];
+                
+                // 如果缓存中没有，从服务器重新获取
+                if (!summary || !summary._id) {
+                    const response = await fetch(`/api/monthly-summaries?year_month=${monthKey}`);
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        summary = result.data;
+                        monthlySummaries[monthKey] = summary;
+                    } else {
+                        showMessage(`❌ 加载失败：未找到 ${monthKey} 的总结`, 'error');
+                        return;
+                    }
+                }
+                
+                // 显示总结数据
+                displaySummary(summary);
+                
+                // 同步更新月份选择器
+                document.getElementById('summary-month').value = monthKey;
+                
+                // 滚动到编辑表单
+                setTimeout(() => {
+                    const summaryDisplay = document.getElementById('summary-display');
+                    if (summaryDisplay && !summaryDisplay.classList.contains('hidden')) {
+                        summaryDisplay.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                    }
+                }, 100);
+                
+                showMessage(`✅ 已加载 ${monthKey} 的总结，可以进行编辑`, 'success');
+                console.log('✅ 时间轴：已加载总结数据', summary);
+                
+            } catch (error) {
+                console.error('加载总结时发生错误:', error);
+                showMessage('❌ 加载失败：' + error.message, 'error');
+            }
+        }
+        
+        // 为指定月份生成总结
+        async function generateSummaryForMonth(monthKey) {
+            try {
+                showMessage('正在生成月度总结...', 'info');
+                
+                const response = await fetch('/api/summaries/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ month: monthKey })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('✅ 月度总结生成成功！', 'success');
+                    monthlySummaries[monthKey] = result.data;
+                    renderTimeline();
+                    displaySummary(result.data);
+                } else {
+                    showMessage('❌ 生成失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('生成月度总结时发生错误:', error);
+                showMessage('❌ 生成失败：' + error.message, 'error');
+            }
+        }
+        
+        // 切换时间轴年份
+        function changeTimelineYear(offset) {
+            currentTimelineYear += offset;
+            initTimelineYearSelector();
+            renderTimeline();
+            loadTimelineData();
+        }
+        
+        // 选择时间轴年份
+        function selectTimelineYear(year) {
+            currentTimelineYear = year;
+            initTimelineYearSelector();
+            renderTimeline();
+            loadTimelineData();
+        }
+        
+        // 加载时间轴数据
+        async function loadTimelineData() {
+            try {
+                // 加载该年份所有月份的总结状态
+                const response = await fetch(`/api/summaries?year=${currentTimelineYear}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    monthlySummaries = {};
+                    result.data.forEach(summary => {
+                        monthlySummaries[summary.year_month] = summary;
+                    });
+                }
+                
+                // 加载该年份各月的日志数量
+                for (let month = 0; month < 12; month++) {
+                    const monthKey = `${currentTimelineYear}-${String(month + 1).padStart(2, '0')}`;
+                    const countResponse = await fetch(`/api/growth-logs/count?month=${monthKey}`);
+                    const countResult = await countResponse.json();
+                    
+                    if (countResult.success) {
+                        monthlyLogsCount[monthKey] = countResult.count || 0;
+                    }
+                }
+                
+                renderTimeline();
+                console.log('✅ 时间轴数据加载完成');
+            } catch (error) {
+                console.error('加载时间轴数据失败:', error);
+            }
+        }
+
+        // ==================== 事件监听器设置 ====================
+        function setupEventListeners() {
+            document.getElementById('main-image-input').addEventListener('change', handleMainImageUpload);
+            document.getElementById('gallery-input').addEventListener('change', handleGalleryUpload);
+            document.getElementById('farm-activity-type').addEventListener('change', handleFarmActivityChange);
+            document.getElementById('log-date').addEventListener('change', handleDateChange);
+            document.getElementById('plot-id').addEventListener('change', updateSyncFields);
+            document.getElementById('recorder-name').addEventListener('input', updateSyncFields);
+            document.getElementById('recorder-name').addEventListener('change', handleRecorderChange);
+        }
+
+        /**
+         * 处理记录人选择变化，更新头像显示
+         */
+        function handleRecorderChange() {
+            const recorderSelect = document.getElementById('recorder-name');
+            const selectedOption = recorderSelect.options[recorderSelect.selectedIndex];
+            const avatarUrl = selectedOption.dataset.avatar || '';
+            
+            // 更新头像显示
+            updateAvatar('recorder-avatar', avatarUrl);
+        }
+
+        /**
+         * 更新人员头像显示
+         * @param {string} containerId - 头像容器的ID
+         * @param {string} avatarUrl - 头像URL
+         */
+        function updateAvatar(containerId, avatarUrl) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (avatarUrl && avatarUrl.trim() !== '') {
+                // 有头像，显示图片
+                container.innerHTML = `<img src="${avatarUrl}" alt="头像" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                // 没有头像，显示默认提示
+                container.innerHTML = '<span style="color: #999; font-size: 0.8rem;">暂无</span>';
+            }
+        }
+
+        function handleDateChange() {
+            const dateInput = document.getElementById('log-date').value;
+            const editingId = document.getElementById('editing-log-id').value;
+            
+            // 在新的日历视图中，重复日期检查由日历本身处理
+            // 用户通过点击日历日期来编辑已有记录
+            if (!editingId && dateInput && monthLogsData[dateInput]) {
+                const dateObj = new Date(dateInput);
+                const dateStr = dateObj.toLocaleDateString('zh-CN');
+                
+                setTimeout(() => {
+                    if (confirm(`该日期（${dateStr}）已有记录。\n\n是否要加载该记录进行编辑？`)) {
+                        // 通过日历功能加载记录
+                        const logData = monthLogsData[dateInput];
+                        if (logData && logData._id) {
+                            editLog(logData._id);
+                        }
+                    } else {
+                        // 清空日期，让用户重新选择
+                        document.getElementById('log-date').value = '';
+                    }
+                }, 300);
+            } else {
+                updateSyncFields();
+            }
+        }
+
+        function handleFarmActivityChange() {
+            const activityType = document.getElementById('farm-activity-type').value;
+            const detailSection = document.getElementById('farm-activity-detail-section');
+            const activityLabel = document.getElementById('activity-details-label');
+            const abnormalSection = document.getElementById('abnormal-event-section');
+            
+            // 控制农事活动详情框
+            if (activityType && activityType !== '无') {
+                detailSection.classList.remove('hidden');
+                
+                const cleanActivityType = activityType.replace(/^[\u{1F000}-\u{1F9FF}]\s*/u, '').trim();
+                activityLabel.textContent = cleanActivityType + '详情';
+                
+                console.log('🔄 农事活动标签已更新为:', cleanActivityType + '详情');
+            } else {
+                detailSection.classList.add('hidden');
+                activityLabel.textContent = '活动详细记录';
+            }
+            
+            // 控制异常事件记录显示/隐藏
+            const cleanActivityType = activityType.replace(/^[\u{1F000}-\u{1F9FF}]\s*/u, '').trim();
+            if (cleanActivityType === '异常') {
+                abnormalSection.classList.remove('hidden');
+                console.log('⚠️ 已显示异常事件记录编辑框');
+            } else {
+                abnormalSection.classList.add('hidden');
+                // 隐藏时清空异常事件字段
+                document.getElementById('abnormal-title').value = '';
+                document.getElementById('abnormal-description').value = '';
+                document.getElementById('abnormal-measures').value = '';
+                console.log('✅ 已隐藏异常事件记录编辑框');
+            }
+            
+            // ❌ 采摘相关逻辑已移除 - 采摘记录统一在"批次追溯管理"中管理
+        }
+
+        // ==================== 查询功能（已废弃，保留兼容性）====================
+        // 注：在新的日历视图中，这些函数已不再使用
+        // 用户通过点击日历日期来查看和编辑记录
+        async function queryLogs() {
+            // 空函数，保留兼容性
+            console.log('queryLogs() 已废弃，请使用日历视图');
+        }
+
+        function displayLogsList(logs) {
+            // 空函数，保留兼容性
+            console.log('displayLogsList() 已废弃，请使用日历视图');
+        }
+
+        // ==================== 编辑功能 ====================
+        async function editLog(id) {
+            try {
+                showMessage('正在加载日志数据...', 'info');
+                
+                const response = await fetch(`/api/growth-logs/${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const log = result.data;
+                    
+                    document.getElementById('editing-log-id').value = id;
+                    document.getElementById('editing-mode-banner').classList.remove('hidden');
+                    
+                    // 显示编辑日期
+                    const dateStr = log.date.split('T')[0];
+                    document.getElementById('editing-date-display').textContent = `- 正在编辑：${formatDateChinese(dateStr)}`;
+                    
+                    fillFormWithLogData(log);
+                    
+                    document.getElementById('save-btn').innerHTML = '💾 更新此条日志';
+                    
+                    // 确保显示第一页
+                    document.getElementById('detail-section').style.display = 'none';
+                    document.getElementById('card-info-section').style.display = 'block';
+                    document.getElementById('step-indicator-2').classList.remove('active');
+                    document.getElementById('step-indicator-1').classList.add('active');
+                    
+                    // 滚动到表单顶部
+                    document.querySelector('.content-main').scrollTop = 0;
+                    
+                    showMessage('✅ 日志数据已加载，请修改后点击更新按钮', 'success');
+                    console.log('✅ 编辑模式：已加载日志数据', log);
+                } else {
+                    showMessage('❌ 加载失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('加载日志数据时发生错误:', error);
+                showMessage('❌ 加载失败：' + error.message, 'error');
+            }
+        }
+
+        function fillFormWithLogData(log) {
+            document.getElementById('log-date').value = log.date.split('T')[0];
+            document.getElementById('recorder-name').value = log.recorder_name || '';
+            
+            // 更新记录人头像
+            const recorderSelect = document.getElementById('recorder-name');
+            const selectedOption = recorderSelect.options[recorderSelect.selectedIndex];
+            if (selectedOption) {
+                const avatarUrl = selectedOption.dataset.avatar || '';
+                updateAvatar('recorder-avatar', avatarUrl);
+            }
+            
+            document.getElementById('summary').value = log.summary || '';
+            
+            mainImageUrl = log.main_image_url || '';
+            document.getElementById('main-image-url').value = mainImageUrl;
+            
+            const mainImagePreview = document.getElementById('main-image-preview');
+            const mainImagePreviewContainer = document.getElementById('main-image-preview-container');
+            
+            if (!mainImagePreview || !mainImagePreviewContainer) {
+                console.warn('⚠️ 主图预览节点不存在，无法填充日志主图');
+            } else if (mainImageUrl) {
+                mainImagePreview.src = mainImageUrl;
+                mainImagePreviewContainer.classList.remove('hidden');
+            } else {
+                // 没有主图时确保预览被重置
+                mainImagePreview.src = '';
+                mainImagePreviewContainer.classList.add('hidden');
+            }
+            
+            document.getElementById('weather').value = log.weather?.icon || '';
+            // 更新天气图标显示
+            updateWeatherIcon();
+            
+            // 解析温度范围
+            const tempRange = log.weather?.temperature_range || '';
+            if (tempRange) {
+                // 移除℃符号并按~分割
+                const cleanTemp = tempRange.replace(/℃/g, '').trim();
+                const temps = cleanTemp.split('~');
+                if (temps.length === 2) {
+                    document.getElementById('min-temperature').value = temps[0].trim();
+                    document.getElementById('max-temperature').value = temps[1].trim();
+                } else if (temps.length === 1) {
+                    // 只有一个值，放在最低温度
+                    document.getElementById('min-temperature').value = temps[0].trim();
+                    document.getElementById('max-temperature').value = '';
+                }
+            } else {
+                document.getElementById('min-temperature').value = '';
+                document.getElementById('max-temperature').value = '';
+            }
+            
+            document.getElementById('plot-id').value = log.plot_id?._id || log.plot_id || '';
+            const farmActivitySelect = document.getElementById('farm-activity-type');
+            if (farmActivitySelect) {
+                const normalizedValue = mapFarmActivityToDisplay(log.farm_activity_type);
+                
+                // 如果选项列表中不存在该值，则强制回退到“无”
+                const hasOption = Array.from(farmActivitySelect.options).some(option => option.value === normalizedValue);
+                farmActivitySelect.value = hasOption ? normalizedValue : '无';
+            }
+            // ❌ 采摘重量字段已移除
+            
+            handleFarmActivityChange();
+            
+            galleryUrls = log.detail_gallery || [];
+            renderGallery();
+            
+            document.getElementById('sunshine-hours').value = log.environment_data?.sunshine_hours || '';
+            document.getElementById('rainfall').value = log.environment_data?.rainfall || '';
+            document.getElementById('avg-temperature').value = log.environment_data?.temperature || '';
+            document.getElementById('humidity').value = log.environment_data?.humidity || '';
+            
+            document.getElementById('full-log').value = log.full_log || '';
+            document.getElementById('phenological-observation').value = log.phenological_observation || '';
+            document.getElementById('farm-activity-log').value = log.farm_activity_log || '';
+            
+            // 填充异常事件数据
+            document.getElementById('abnormal-title').value = log.abnormal_event?.title || '';
+            document.getElementById('abnormal-description').value = log.abnormal_event?.description || '';
+            document.getElementById('abnormal-measures').value = log.abnormal_event?.measures_taken || '';
+            
+            updateSyncFields();
+        }
+
+        function cancelEdit() {
+            if (confirm('确定要取消编辑吗？未保存的修改将丢失。')) {
+                document.getElementById('editing-log-id').value = '';
+                document.getElementById('editing-mode-banner').classList.add('hidden');
+                document.getElementById('editing-date-display').textContent = '';
+                document.getElementById('save-btn').innerHTML = '💾 保存此条日志';
+                
+                clearForm();
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('log-date').value = today;
+                
+                // 取消日历选中状态
+                selectedDate = null;
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('selected');
+                });
+                
+                showMessage('已取消编辑，可以新增日志', 'info');
+            }
+        }
+
+        // ==================== 表单导航功能 ====================
+        function cancelCardEdit() {
+            if (confirm('确定要取消吗？未保存的修改将丢失。')) {
+                document.getElementById('editing-log-id').value = '';
+                document.getElementById('editing-mode-banner').classList.add('hidden');
+                document.getElementById('editing-date-display').textContent = '';
+                document.getElementById('save-btn').innerHTML = '💾 保存此条日志';
+                
+                clearForm();
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('log-date').value = today;
+                
+                // 取消日历选中状态
+                selectedDate = null;
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('selected');
+                });
+                
+                showMessage('已取消操作', 'info');
+            }
+        }
+
+        function goToDetailSection() {
+            // 检查必填字段
+            const date = document.getElementById('log-date').value;
+            const summary = document.getElementById('summary').value.trim();
+            const mainImage = document.getElementById('main-image-url').value;
+
+            if (!date) {
+                showMessage('请先选择日期', 'error');
+                document.getElementById('log-date').focus();
+                return;
+            }
+
+            if (!mainImage) {
+                showMessage('请先上传主图', 'error');
+                return;
+            }
+
+            if (!summary) {
+                showMessage('请先填写核心日志摘要', 'error');
+                document.getElementById('summary').focus();
+                return;
+            }
+
+            // 切换到第二页
+            document.getElementById('card-info-section').style.display = 'none';
+            document.getElementById('detail-section').style.display = 'block';
+            
+            // 更新步骤指示器
+            document.getElementById('step-indicator-1').classList.remove('active');
+            document.getElementById('step-indicator-2').classList.add('active');
+            
+            // 滚动到顶部
+            const formContainer = document.querySelector('.content-main');
+            if (formContainer) {
+                formContainer.scrollTop = 0;
+            }
+            
+            showMessage('✓ 基本信息填写完整，请继续填写详情页信息', 'success');
+        }
+
+        function goToPreviousPage() {
+            // 返回第一页
+            document.getElementById('detail-section').style.display = 'none';
+            document.getElementById('card-info-section').style.display = 'block';
+            
+            // 更新步骤指示器
+            document.getElementById('step-indicator-2').classList.remove('active');
+            document.getElementById('step-indicator-1').classList.add('active');
+            
+            // 滚动到顶部
+            const formContainer = document.querySelector('.content-main');
+            if (formContainer) {
+                formContainer.scrollTop = 0;
+            }
+            
+            showMessage('已返回卡片信息编辑', 'info');
+        }
+
+        function clearForm() {
+            document.getElementById('daily-log-form').reset();
+            
+            mainImageUrl = '';
+            document.getElementById('main-image-url').value = '';
+            document.getElementById('main-image-preview').src = '';
+            document.getElementById('main-image-preview-container').classList.add('hidden');
+            document.getElementById('main-image-input').value = '';
+            
+            galleryUrls = [];
+            renderGallery();
+            
+            document.getElementById('farm-activity-detail-section').classList.add('hidden');
+            // ❌ harvest-weight-section 已移除
+            
+            // 清空记录人头像
+            updateAvatar('recorder-avatar', '');
+            
+            // 清空天气图标
+            document.getElementById('weather-icon-preview').style.display = 'none';
+            document.getElementById('weather-icon-preview').src = '';
+            
+            updateSyncFields();
+            
+            // 返回第一页
+            document.getElementById('detail-section').style.display = 'none';
+            document.getElementById('card-info-section').style.display = 'block';
+            document.getElementById('step-indicator-2').classList.remove('active');
+            document.getElementById('step-indicator-1').classList.add('active');
+        }
+
+        // ==================== 删除功能 ====================
+        async function deleteLog(id) {
+            if (!confirm('确定要删除这条日志吗？此操作不可撤销！')) {
+                return;
+            }
+
+            try {
+                showMessage('正在删除日志...', 'info');
+                
+                const response = await fetch(`/api/growth-logs/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 日志已成功删除', 'success');
+                    // 刷新日历数据
+                    loadMonthLogs();
+                    console.log('✅ 已删除日志:', id);
+                } else {
+                    showMessage('❌ 删除失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('删除日志时发生错误:', error);
+                showMessage('❌ 删除失败：' + error.message, 'error');
+            }
+        }
+
+        // ==================== 保存功能 ====================
+        async function saveLog() {
+            try {
+                const logDate = document.getElementById('log-date').value;
+                const summary = document.getElementById('summary').value.trim();
+                
+                if (!logDate) {
+                    showMessage('请选择日期', 'error');
+                    return;
+                }
+                if (!summary) {
+                    showMessage('请填写核心日志摘要', 'error');
+                    return;
+                }
+
+                const editingId = document.getElementById('editing-log-id').value;
+                const isEditMode = !!editingId;
+
+                if (!isEditMode && !mainImageUrl) {
+                    if (!confirm('尚未上传主图，确定要继续保存吗？')) {
+                        return;
+                    }
+                }
+
+                // 添加保存确认
+                const confirmMessage = isEditMode 
+                    ? '确定要保存对该日志的修改吗？' 
+                    : '确定要保存这条日志吗？';
+                
+                if (!confirm(confirmMessage)) {
+                    showMessage('已取消保存', 'info');
+                    return;
+                }
+
+                const farmActivityType = document.getElementById('farm-activity-type').value;
+                const farmActivityLog = (farmActivityType === '无' || farmActivityType === '') 
+                    ? '' 
+                    : document.getElementById('farm-activity-log').value.trim();
+                
+                // ❌ 采摘重量字段已移除 - 采摘记录统一在"批次追溯管理"中管理
+                const harvestWeight = 0;
+                
+                // 收集异常事件数据
+                const abnormalTitle = document.getElementById('abnormal-title').value.trim();
+                const abnormalData = abnormalTitle ? {
+                    title: abnormalTitle,
+                    description: document.getElementById('abnormal-description').value.trim(),
+                    severity: 'low',  // 默认值，保持数据库模型兼容
+                    measures_taken: document.getElementById('abnormal-measures').value.trim()
+                } : {
+                    title: '',
+                    description: '',
+                    severity: 'low',
+                    measures_taken: ''
+                };
+                
+                // 组合温度范围
+                const minTemp = document.getElementById('min-temperature').value.trim();
+                const maxTemp = document.getElementById('max-temperature').value.trim();
+                let temperatureRange = '';
+                if (minTemp && maxTemp) {
+                    temperatureRange = `${minTemp}~${maxTemp}℃`;
+                } else if (minTemp) {
+                    temperatureRange = `${minTemp}℃`;
+                } else if (maxTemp) {
+                    temperatureRange = `${maxTemp}℃`;
+                }
+                
+                const logData = {
+                    date: logDate,
+                    main_image_url: mainImageUrl,
+                    recorder_name: document.getElementById('recorder-name').value.trim(),
+                    plot_id: document.getElementById('plot-id').value || undefined,
+                    farm_activity_type: farmActivityType,
+                    harvest_weight_kg: harvestWeight,
+                    weather: {
+                        icon: document.getElementById('weather').value,
+                        temperature_range: temperatureRange
+                    },
+                    summary: summary,
+                    detail_gallery: galleryUrls,
+                    photo_info: {
+                        photographer: document.getElementById('recorder-name').value.trim(),
+                        location: document.getElementById('photo-plot').value
+                    },
+                    environment_data: {
+                        sunshine_hours: document.getElementById('sunshine-hours').value.trim(),
+                        rainfall: document.getElementById('rainfall').value.trim(),
+                        temperature: document.getElementById('avg-temperature').value.trim(),
+                        humidity: document.getElementById('humidity').value.trim()
+                    },
+                    full_log: document.getElementById('full-log').value.trim(),
+                    phenological_observation: document.getElementById('phenological-observation').value.trim(),
+                    farm_activity_log: farmActivityLog,
+                    abnormal_event: abnormalData
+                };
+
+                console.log('📤 准备提交日志数据:', logData);
+                showMessage(isEditMode ? '正在更新日志...' : '正在保存日志...', 'info');
+
+                const url = isEditMode ? `/api/growth-logs/${editingId}` : '/api/growth-logs';
+                const method = isEditMode ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(logData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(isEditMode ? '✅ 日志更新成功！' : '✅ 日志保存成功！', 'success');
+                    console.log(isEditMode ? '✅ 日志更新成功:' : '✅ 日志保存成功:', result.data);
+                    
+                    // 刷新日历数据
+                    loadMonthLogs();
+                    
+                    document.getElementById('editing-log-id').value = '';
+                    document.getElementById('editing-mode-banner').classList.add('hidden');
+                    document.getElementById('editing-date-display').textContent = '';
+                    document.getElementById('save-btn').innerHTML = '💾 保存此条日志';
+                    
+                    setTimeout(() => {
+                        if (confirm('操作成功！是否继续添加新日志？\n点击"确定"清空表单，点击"取消"返回仪表板')) {
+                            clearForm();
+                            const today = new Date().toISOString().split('T')[0];
+                            document.getElementById('log-date').value = today;
+                            selectedDate = null;
+                            document.querySelectorAll('.calendar-day').forEach(day => {
+                                day.classList.remove('selected');
+                            });
+                            document.querySelector('.content-main').scrollTop = 0;
+                        } else {
+                            window.location.href = '/dashboard';
+                        }
+                    }, 1500);
+                } else {
+                    showMessage('❌ 保存失败：' + result.message, 'error');
+                    console.error('保存失败:', result);
+                }
+            } catch (error) {
+                console.error('保存日志时发生错误:', error);
+                showMessage('❌ 保存失败：' + error.message, 'error');
+            }
+        }
+
+        // ==================== 图片处理 ====================
+        async function handleMainImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showMessage('正在上传主图...', 'info');
+            try {
+                const url = await uploadImage(file);
+                if (url) {
+                    mainImageUrl = url;
+                    document.getElementById('main-image-url').value = url;
+                    const preview = document.getElementById('main-image-preview');
+                    const container = document.getElementById('main-image-preview-container');
+                    preview.src = url;
+                    container.classList.remove('hidden');
+                    showMessage('主图上传成功！', 'success');
+                    console.log('✅ 主图上传成功:', url);
+                }
+            } catch (error) {
+                showMessage('主图上传失败：' + error.message, 'error');
+            }
+        }
+
+        function removeMainImage() {
+            if (confirm('确定要删除主图吗？')) {
+                mainImageUrl = '';
+                document.getElementById('main-image-url').value = '';
+                document.getElementById('main-image-preview').src = '';
+                document.getElementById('main-image-preview-container').classList.add('hidden');
+                document.getElementById('main-image-input').value = '';
+                showMessage('主图已删除', 'info');
+            }
+        }
+
+        async function handleGalleryUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+            showMessage(`正在上传 ${files.length} 张图片...`, 'info');
+            for (let file of files) {
+                try {
+                    const url = await uploadImage(file);
+                    if (url) {
+                        galleryUrls.push(url);
+                        console.log('✅ 图片上传成功:', url);
+                    }
+                } catch (error) {
+                    console.error('图片上传失败:', error);
+                }
+            }
+            renderGallery();
+            showMessage(`成功上传 ${files.length} 张图片！`, 'success');
+            event.target.value = '';
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('gallery-preview');
+            if (galleryUrls.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = galleryUrls.map((url, index) => `
+                <div class="gallery-item">
+                    <img src="${url}" alt="图片 ${index + 1}">
+                    <button type="button" class="remove-btn" onclick="removeGalleryImage(${index})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function removeGalleryImage(index) {
+            if (confirm('确定要删除这张图片吗？')) {
+                galleryUrls.splice(index, 1);
+                renderGallery();
+                showMessage('图片已删除', 'info');
+            }
+        }
+
+        async function uploadImage(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data.fullUrl;
+            } else {
+                throw new Error(result.message || '上传失败');
+            }
+        }
+
+        function updateSyncFields() {
+            const logDate = document.getElementById('log-date').value;
+            document.getElementById('photo-date').value = logDate || '';
+            const plotId = document.getElementById('plot-id').value;
+            const selectedPlot = availablePlots.find(p => p._id === plotId);
+            document.getElementById('photo-plot').value = selectedPlot ? selectedPlot.name : '';
+            const recorderName = document.getElementById('recorder-name').value;
+            document.getElementById('photo-person').value = recorderName || '';
+        }
+
+        // ==================== 顶部影像画廊管理 ====================
+        
+        // 处理顶部画廊上传
+        async function handleTopGalleryUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+            
+            showMessage(`正在上传 ${files.length} 个文件...`, 'info');
+            
+            for (let file of files) {
+                try {
+                    const url = await uploadImage(file);
+                    if (url) {
+                        topGalleryUrls.push(url);
+                        console.log('✅ 文件上传成功:', url);
+                    }
+                } catch (error) {
+                    console.error('文件上传失败:', error);
+                }
+            }
+            
+            renderTopGallery();
+            showMessage(`成功上传 ${files.length} 个文件！`, 'success');
+            event.target.value = ''; // 清空输入框
+        }
+
+        // 渲染顶部影像画廊
+        function renderTopGallery() {
+            const container = document.getElementById('top-gallery-preview');
+            
+            if (topGalleryUrls.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 1rem;">暂无影像，请点击上方上传</p>';
+                return;
+            }
+            
+            container.innerHTML = topGalleryUrls.map((url, index) => {
+                // 判断是图片还是视频
+                const isVideo = url.toLowerCase().match(/\.(mp4|webm|ogg)$/);
+                
+                return `
+                    <div class="gallery-item">
+                        ${isVideo ? 
+                            `<video src="${url}" style="width: 100%; height: 150px; object-fit: cover;"></video>` :
+                            `<img src="${url}" alt="影像 ${index + 1}">`
+                        }
+                        <button type="button" class="remove-btn" onclick="removeTopGalleryImage(${index})">×</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 删除顶部画廊中的图片
+        function removeTopGalleryImage(index) {
+            if (confirm('确定要删除这个文件吗？')) {
+                topGalleryUrls.splice(index, 1);
+                renderTopGallery();
+                showMessage('文件已删除', 'info');
+            }
+        }
+
+        // ==================== 月份总结功能 ====================
+        
+        // 获取并渲染所有已保存的月度总结列表 - 已废弃，使用时间轴代替
+        async function fetchAndRenderSummaries() {
+            try {
+                const response = await fetch('/api/summaries');
+                const result = await response.json();
+
+                if (result.success) {
+                    displaySummaryList(result.data);
+                    console.log('✅ 成功加载', result.data.length, '个月度总结');
+                } else {
+                    showMessage('❌ 加载列表失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('获取月度总结列表时发生错误:', error);
+                showMessage('❌ 加载列表失败：' + error.message, 'error');
+            }
+        }
+
+        // 渲染月度总结列表 - 已废弃，使用时间轴代替
+        function displaySummaryList(summaries) {
+            const container = document.getElementById('summary-list-container');
+            
+            // 防御性检查：如果容器不存在，则不执行
+            if (!container) {
+                console.log('⚠️ summary-list-container 不存在，此功能已被时间轴选择器取代');
+                return;
+            }
+            
+            if (!summaries || summaries.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center;">暂无已保存的月度总结</p>';
+                return;
+            }
+
+            container.innerHTML = summaries.map(summary => {
+                // 格式化年月显示
+                const [year, month] = summary.year_month.split('-');
+                const displayMonth = `${year}年${parseInt(month)}月`;
+                
+                // 提取关键统计信息
+                const harvestCount = summary.harvest_stats?.count || 0;
+                const harvestWeight = summary.harvest_stats?.total_weight || 0;
+                const farmActivitiesCount = summary.farm_calendar ? summary.farm_calendar.split('\n').filter(line => line.trim()).length : 0;
+                
+                return `
+                    <div class="log-item">
+                        <div class="log-item-info">
+                            <h4>📅 ${displayMonth} 总结</h4>
+                            <p>采摘 ${harvestCount} 次 / ${harvestWeight}kg · 农事活动 ${farmActivitiesCount} 项 · 图片 ${summary.detail_gallery?.length || 0} 张</p>
+                        </div>
+                        <div class="log-item-actions">
+                            <button class="btn btn-secondary btn-small" onclick="editSummary('${summary._id}')">
+                                ✏️ 编辑
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteSummary('${summary._id}')">
+                                🗑️ 删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 编辑月度总结
+        async function editSummary(id) {
+            try {
+                showMessage('正在加载总结数据...', 'info');
+                
+                const response = await fetch(`/api/monthly-summaries/${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const summary = result.data;
+                    
+                    // 设置编辑模式
+                    document.getElementById('editing-summary-id').value = id;
+                    document.getElementById('editing-summary-banner').classList.remove('hidden');
+                    
+                    // 填充数据到表单
+                    displaySummary(summary);
+                    
+                    // 滚动到编辑表单
+                    document.getElementById('summary-display').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    showMessage('✅ 总结数据已加载，请修改后点击保存按钮', 'success');
+                    console.log('✅ 编辑模式：已加载总结数据', summary);
+                } else {
+                    showMessage('❌ 加载失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('加载总结数据时发生错误:', error);
+                showMessage('❌ 加载失败：' + error.message, 'error');
+            }
+        }
+
+        // 删除月度总结（从列表中删除）
+        async function deleteSummary(id) {
+            // 获取要删除的总结信息
+            const summaryElement = event.target.closest('.log-item');
+            const summaryTitle = summaryElement.querySelector('h4').textContent;
+            
+            if (!confirm(`确定要删除"${summaryTitle}"吗？\n此操作不可撤销！`)) {
+                return;
+            }
+
+            try {
+                showMessage('正在删除总结...', 'info');
+                
+                const response = await fetch(`/api/monthly-summaries/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 总结已成功删除', 'success');
+                    
+                    // 刷新列表
+                    fetchAndRenderSummaries();
+                    
+                    // 如果正在编辑这条记录，取消编辑模式
+                    if (document.getElementById('editing-summary-id').value === id) {
+                        cancelSummaryEdit();
+                    }
+                    
+                    console.log('✅ 已删除总结:', id);
+                } else {
+                    showMessage('❌ 删除失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('删除总结时发生错误:', error);
+                showMessage('❌ 删除失败：' + error.message, 'error');
+            }
+        }
+        
+        // 删除当前查看/编辑的月度总结
+        async function deleteCurrentSummary() {
+            // 获取当前总结ID
+            const editingId = document.getElementById('editing-summary-id').value;
+            const summaryId = editingId || currentSummaryId;
+            
+            if (!summaryId) {
+                showMessage('❌ 无法删除：未找到总结ID', 'error');
+                return;
+            }
+            
+            // 获取月份信息
+            const monthValue = document.getElementById('summary-month').value;
+            
+            if (!confirm(`确定要删除 ${monthValue} 的月度总结吗？\n\n此操作不可撤销！`)) {
+                return;
+            }
+
+            try {
+                showMessage('正在删除总结...', 'info');
+                
+                const response = await fetch(`/api/monthly-summaries/${summaryId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 总结已成功删除', 'success');
+                    
+                    // 清空当前总结
+                    currentSummaryId = null;
+                    document.getElementById('editing-summary-id').value = '';
+                    
+                    // 隐藏总结显示区域和删除按钮
+                    document.getElementById('summary-display').classList.add('hidden');
+                    document.getElementById('delete-summary-container').style.display = 'none';
+                    
+                    // 隐藏编辑模式横幅
+                    document.getElementById('editing-summary-banner').classList.add('hidden');
+                    
+                    // 刷新时间轴和列表
+                    await loadTimelineData();
+                    renderTimeline();
+                    
+                    // 如果有旧版列表，也刷新
+                    if (typeof fetchAndRenderSummaries === 'function') {
+                        fetchAndRenderSummaries();
+                    }
+                    
+                    console.log('✅ 已删除总结:', summaryId);
+                } else {
+                    showMessage('❌ 删除失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('删除总结时发生错误:', error);
+                showMessage('❌ 删除失败：' + error.message, 'error');
+            }
+        }
+
+        // 取消编辑总结
+        function cancelSummaryEdit() {
+            if (confirm('确定要取消编辑吗？未保存的修改将丢失。')) {
+                document.getElementById('editing-summary-id').value = '';
+                document.getElementById('editing-summary-banner').classList.add('hidden');
+                document.getElementById('summary-display').classList.add('hidden');
+                document.getElementById('delete-summary-container').style.display = 'none';
+                currentSummaryId = null;
+                
+                // 清空顶部画廊
+                topGalleryUrls = [];
+                renderTopGallery();
+                
+                showMessage('已取消编辑，可以生成新的总结', 'info');
+            }
+        }
+
+        async function generateSummary() {
+            const month = document.getElementById('summary-month').value;
+            if (!month) {
+                showMessage('请选择要生成总结的月份', 'error');
+                return;
+            }
+
+            if (!confirm(`确定要为 ${month} 生成月度总结吗？\n如果该月已有总结，将会被更新。`)) {
+                return;
+            }
+
+            try {
+                showMessage('正在生成月度总结...', 'info');
+                
+                const response = await fetch('/api/summaries/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ month: month })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 月度总结生成成功！', 'success');
+                    console.log('✅ 月度总结:', result.data);
+                    
+                    // 自动显示生成的总结
+                    displaySummary(result.data);
+                    
+                    // 刷新列表
+                    fetchAndRenderSummaries();
+                } else {
+                    showMessage('❌ 生成失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('生成月度总结时发生错误:', error);
+                showMessage('❌ 生成失败：' + error.message, 'error');
+            }
+        }
+
+
+        function displaySummary(summary) {
+            // 如果不是编辑模式，设置 currentSummaryId
+            const editingId = document.getElementById('editing-summary-id').value;
+            if (!editingId) {
+                currentSummaryId = summary._id;
+            }
+            
+            // 填充采摘统计到可编辑输入框
+            document.getElementById('harvest-count').value = summary.harvest_stats?.count || 0;
+            document.getElementById('harvest-weight').value = summary.harvest_stats?.total_weight || 0;
+            
+            // 填充农事日历到可编辑文本框
+            document.getElementById('farm-calendar-display').value = summary.farm_calendar || '';
+            
+            // 填充异常事件汇总到可编辑文本框
+            const abnormalDisplay = document.getElementById('abnormal-events-display');
+            if (summary.abnormal_summary && summary.abnormal_summary.length > 0) {
+                // 将异常事件数组转换为可编辑的文本格式
+                const abnormalText = summary.abnormal_summary.map(event => 
+                    `${event.date} ${event.issue}，${event.measures}`
+                ).join('\n');
+                abnormalDisplay.value = abnormalText;
+            } else {
+                abnormalDisplay.value = '';
+            }
+            
+            // 填充气候总结到可编辑输入框
+            document.getElementById('avg-temp-display').value = summary.climate_summary?.avg_temp || '';
+            document.getElementById('total-precipitation-display').value = summary.climate_summary?.total_precipitation || '';
+            
+            // 填充顶部影像画廊
+            topGalleryUrls = summary.detail_gallery || [];
+            renderTopGallery();
+            
+            // 填充下月计划到可编辑文本框
+            const plans = summary.next_month_plan || [];
+            document.getElementById('next-month-plan').value = plans.join('\n');
+            
+            // 显示总结区域
+            document.getElementById('summary-display').classList.remove('hidden');
+            
+            // 显示删除按钮（如果有总结ID）
+            if (summary._id) {
+                document.getElementById('delete-summary-container').style.display = 'block';
+            } else {
+                document.getElementById('delete-summary-container').style.display = 'none';
+            }
+            
+            console.log('✅ 月度总结数据已填充到表单，可以进行编辑');
+        }
+
+        async function saveAllSummaryChanges() {
+            // 检查是否有要保存的总结（编辑模式或生成后的总结）
+            const editingId = document.getElementById('editing-summary-id').value;
+            const summaryId = editingId || currentSummaryId;
+            
+            if (!summaryId) {
+                showMessage('请先生成或加载月度总结', 'error');
+                return;
+            }
+
+            // 添加保存确认
+            if (!confirm('确定要保存月度总结的所有修改吗？')) {
+                showMessage('已取消保存', 'info');
+                return;
+            }
+
+            try {
+                // 1. 收集采摘统计数据（只读，由系统自动生成）
+                // 注意：采摘统计数据来自"批次追溯管理"中的采摘记录，此处只读取系统计算的值
+                const harvestCount = parseInt(document.getElementById('harvest-count').value) || 0;
+                const harvestWeight = parseFloat(document.getElementById('harvest-weight').value) || 0;
+                
+                // 2. 收集农事日历数据
+                const farmCalendar = document.getElementById('farm-calendar-display').value.trim();
+                
+                // 3. 收集并解析异常事件汇总
+                const abnormalText = document.getElementById('abnormal-events-display').value.trim();
+                const abnormalSummary = [];
+                if (abnormalText) {
+                    // 简单解析：每行一个事件，格式：日期 问题，措施
+                    const lines = abnormalText.split('\n').filter(line => line.trim());
+                    lines.forEach(line => {
+                        // 尝试提取日期、问题和措施
+                        const match = line.match(/^(\S+)\s+(.+?)，(.+)$/);
+                        if (match) {
+                            abnormalSummary.push({
+                                date: match[1],
+                                issue: match[2],
+                                measures: match[3]
+                            });
+                        } else {
+                            // 如果格式不匹配，将整行作为问题
+                            abnormalSummary.push({
+                                date: '',
+                                issue: line,
+                                measures: ''
+                            });
+                        }
+                    });
+                }
+                
+                // 4. 收集气候总结数据
+                const avgTemp = document.getElementById('avg-temp-display').value.trim();
+                const totalPrecipitation = document.getElementById('total-precipitation-display').value.trim();
+                
+                // 5. 收集下月计划数据
+                const planText = document.getElementById('next-month-plan').value.trim();
+                const nextMonthPlan = planText.split('\n').filter(line => line.trim()).map(line => line.trim());
+
+                // 6. 构建完整的更新对象
+                const summaryData = {
+                    detail_gallery: topGalleryUrls, // 包含顶部影像画廊
+                    harvest_stats: {
+                        count: harvestCount,
+                        total_weight: harvestWeight
+                    },
+                    farm_calendar: farmCalendar,
+                    abnormal_summary: abnormalSummary,
+                    climate_summary: {
+                        avg_temp: avgTemp,
+                        total_precipitation: totalPrecipitation
+                    },
+                    next_month_plan: nextMonthPlan
+                };
+
+                console.log('📤 准备保存月度总结:', summaryData);
+                showMessage('正在保存所有修改...', 'info');
+                
+                // 7. 发送 PUT 请求更新数据
+                const response = await fetch(`/api/monthly-summaries/${summaryId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(summaryData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 月度总结保存成功！所有修改已更新', 'success');
+                    console.log('✅ 月度总结已更新:', result.data);
+                    
+                    // 重新显示更新后的数据
+                    displaySummary(result.data);
+                    
+                    // 刷新列表
+                    fetchAndRenderSummaries();
+                    
+                    // 如果是编辑模式，退出编辑模式
+                    if (editingId) {
+                        document.getElementById('editing-summary-id').value = '';
+                        document.getElementById('editing-summary-banner').classList.add('hidden');
+                        currentSummaryId = result.data._id;
+                    }
+                } else {
+                    showMessage('❌ 保存失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('保存月度总结时发生错误:', error);
+                showMessage('❌ 保存失败：' + error.message, 'error');
+            }
+        }
+
+        // ==================== 消息提示 ====================
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('message-container');
+            const className = type === 'success' ? 'success-message' : 
+                            type === 'error' ? 'error-message' : 'info-box';
+            container.innerHTML = `<div class="${className}">${message}</div>`;
+            if (type !== 'error') {
+                setTimeout(() => { container.innerHTML = ''; }, 5000);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
+

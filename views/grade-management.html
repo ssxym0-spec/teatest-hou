@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>等级管理 - 茶园管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 3rem;
+        }
+        
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 { 
+            color: #667eea; 
+            font-size: 1.8rem; 
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .header .subtitle { 
+            color: #666; 
+            font-size: 0.9rem; 
+        }
+        
+        .nav-buttons { 
+            margin-top: 1rem; 
+            display: flex; 
+            gap: 1rem; 
+        }
+        
+        .nav-btn {
+            background: #6c757d; 
+            color: white; 
+            text-decoration: none;
+            padding: 0.5rem 1rem; 
+            border-radius: 5px; 
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-btn:hover { background: #5a6268; }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 0 2rem; 
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .panel-title {
+            color: #667eea;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+        
+        .grades-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .grade-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .grade-item:hover {
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .grade-badge {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #667eea;
+        }
+        
+        .grade-badge-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e0e0e0 0%, #c0c0c0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #666;
+            border: 3px solid #e0e0e0;
+        }
+        
+        .grade-info {
+            flex: 1;
+        }
+        
+        .grade-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.3rem;
+        }
+        
+        .grade-meta {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .grade-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .file-upload-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem;
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload-label:hover {
+            background: #e7f1ff;
+        }
+        
+        .file-upload-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .preview-container {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .preview-image {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 10px;
+            border: 3px solid #667eea;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .modal-title {
+            color: #667eea;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .modal-footer {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+        
+        @media (max-width: 992px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏆 等级管理模板</h1>
+        <p class="subtitle">统一管理产品等级和徽章，批次管理中可直接下拉选择</p>
+        <div class="nav-buttons">
+            <a href="/admin/template-management" class="nav-btn">📝 返回模板中心</a>
+            <a href="/dashboard" class="nav-btn">📊 返回仪表板</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="alert-container"></div>
+        
+        <div class="main-grid">
+            <!-- 左侧：新增等级表单 -->
+            <div class="panel">
+                <h2 class="panel-title">➕ 新增等级</h2>
+                
+                <form id="add-grade-form">
+                    <div class="form-group">
+                        <label for="grade-name">等级名称 *</label>
+                        <input type="text" id="grade-name" class="form-control" placeholder="例如：优选、特一级" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>等级徽章图片</label>
+                        <div class="file-upload-wrapper">
+                            <label for="badge-upload" class="file-upload-label">
+                                <span>📷</span>
+                                <span id="file-name">点击上传徽章图片（可选）</span>
+                            </label>
+                            <input type="file" id="badge-upload" class="file-upload-input" accept="image/*">
+                        </div>
+                        <div id="badge-preview" class="preview-container" style="display: none;">
+                            <img id="preview-img" class="preview-image">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        ✅ 创建等级
+                    </button>
+                </form>
+            </div>
+            
+            <!-- 右侧：等级列表 -->
+            <div class="panel">
+                <h2 class="panel-title">📋 等级列表</h2>
+                
+                <div class="loading" id="loading">
+                    ⏳ 加载中...
+                </div>
+                
+                <div id="grades-container" class="grades-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑等级模态框 -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ 编辑等级</h3>
+            </div>
+            
+            <form id="edit-grade-form">
+                <input type="hidden" id="edit-grade-id">
+                
+                <div class="form-group">
+                    <label for="edit-grade-name">等级名称 *</label>
+                    <input type="text" id="edit-grade-name" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>等级徽章图片</label>
+                    <div class="file-upload-wrapper">
+                        <label for="edit-badge-upload" class="file-upload-label">
+                            <span>📷</span>
+                            <span id="edit-file-name">点击上传新徽章图片</span>
+                        </label>
+                        <input type="file" id="edit-badge-upload" class="file-upload-input" accept="image/*">
+                    </div>
+                    <div id="edit-badge-preview" class="preview-container" style="display: none;">
+                        <img id="edit-preview-img" class="preview-image">
+                    </div>
+                    <input type="hidden" id="edit-current-badge-url">
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                    <button type="submit" class="btn btn-success">💾 保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentBadgeUrl = '';
+        let currentEditBadgeUrl = '';
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGrades();
+            setupEventListeners();
+        });
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 新增等级表单提交
+            document.getElementById('add-grade-form').addEventListener('submit', handleAddGrade);
+            
+            // 编辑等级表单提交
+            document.getElementById('edit-grade-form').addEventListener('submit', handleEditGrade);
+            
+            // 徽章上传预览
+            document.getElementById('badge-upload').addEventListener('change', function(e) {
+                handleImagePreview(e, 'badge-preview', 'preview-img', 'file-name');
+            });
+            
+            document.getElementById('edit-badge-upload').addEventListener('change', function(e) {
+                handleImagePreview(e, 'edit-badge-preview', 'edit-preview-img', 'edit-file-name');
+            });
+            
+            // 点击模态框外部关闭
+            document.getElementById('edit-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeEditModal();
+                }
+            });
+        }
+        
+        // 加载所有等级
+        async function loadGrades() {
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('grades-container');
+            
+            loading.style.display = 'block';
+            container.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/grades');
+                
+                // 检查是否是401未授权错误
+                if (response.status === 401) {
+                    window.location.href = '/?error=session-expired';
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (result.success && result.data.length > 0) {
+                    displayGrades(result.data);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🏆</div>
+                            <p>暂无等级数据</p>
+                            <p style="font-size: 0.9rem;">请在左侧添加第一个等级</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                showAlert('加载等级失败：' + error.message, 'error');
+            }
+        }
+        
+        // 显示等级列表
+        function displayGrades(grades) {
+            const container = document.getElementById('grades-container');
+            container.innerHTML = '';
+            
+            grades.forEach((grade) => {
+                const gradeId = grade.id ?? grade._id ?? '';
+                if (!gradeId) {
+                    console.warn('[Grades] 缺少 id，跳过该记录:', grade);
+                    return;
+                }
+
+                const badgeUrl = grade.badgeUrl ?? grade.badge_url ?? '';
+                const gradeItem = document.createElement('div');
+                gradeItem.className = 'grade-item';
+                
+                const badgeHtml = badgeUrl
+                    ? `<img src="${badgeUrl}" class="grade-badge" alt="${grade.name}">`
+                    : `<div class="grade-badge-placeholder">🏆</div>`;
+                
+                gradeItem.innerHTML = `
+                    ${badgeHtml}
+                    <div class="grade-info">
+                        <div class="grade-name">${grade.name}</div>
+                        <div class="grade-meta">
+                            创建时间：${formatDate(grade.createdAt)}
+                        </div>
+                    </div>
+                    <div class="grade-actions">
+                        <button class="btn btn-success btn-sm grade-edit-btn">
+                            ✏️ 编辑
+                        </button>
+                        <button class="btn btn-danger btn-sm grade-delete-btn">
+                            🗑️ 删除
+                        </button>
+                    </div>
+                `;
+
+                const editBtn = gradeItem.querySelector('.grade-edit-btn');
+                const deleteBtn = gradeItem.querySelector('.grade-delete-btn');
+
+                if (editBtn) {
+                    editBtn.addEventListener('click', () =>
+                        editGrade(gradeId, grade.name, badgeUrl),
+                    );
+                }
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', () =>
+                        deleteGrade(gradeId, grade.name),
+                    );
+                }
+                
+                container.appendChild(gradeItem);
+            });
+        }
+        
+        // 处理新增等级
+        async function handleAddGrade(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('grade-name').value.trim();
+            const badgeFile = document.getElementById('badge-upload').files[0];
+            
+            if (!name) {
+                showAlert('请输入等级名称', 'error');
+                return;
+            }
+            
+            try {
+                let badgeUrl = '';
+                
+                // 如果有上传图片，先上传图片
+                if (badgeFile) {
+                    badgeUrl = await uploadImage(badgeFile, 'misc');
+                }
+                
+                // 创建等级
+                const response = await fetch('/api/grades', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        badge_url: badgeUrl
+                    })
+                });
+                
+                // 检查是否是401未授权错误
+                if (response.status === 401) {
+                    showAlert('会话已过期，请重新登录', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/?error=session-expired';
+                    }, 1500);
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('等级创建成功！', 'success');
+                    document.getElementById('add-grade-form').reset();
+                    document.getElementById('badge-preview').style.display = 'none';
+                    document.getElementById('file-name').textContent = '点击上传徽章图片（可选）';
+                    loadGrades();
+                } else {
+                    showAlert('创建失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('创建等级时发生错误：' + error.message, 'error');
+            }
+        }
+        
+        // 打开编辑模态框
+        function editGrade(id, name, badgeUrl) {
+            document.getElementById('edit-grade-id').value = id;
+            document.getElementById('edit-grade-name').value = name;
+            document.getElementById('edit-current-badge-url').value = badgeUrl;
+            
+            // 显示当前徽章
+            if (badgeUrl) {
+                document.getElementById('edit-badge-preview').style.display = 'block';
+                document.getElementById('edit-preview-img').src = badgeUrl;
+                document.getElementById('edit-file-name').textContent = '当前徽章（点击更换）';
+            } else {
+                document.getElementById('edit-badge-preview').style.display = 'none';
+                document.getElementById('edit-file-name').textContent = '点击上传新徽章图片';
+            }
+            
+            document.getElementById('edit-modal').style.display = 'block';
+        }
+        
+        // 关闭编辑模态框
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            document.getElementById('edit-grade-form').reset();
+        }
+        
+        // 处理编辑等级
+        async function handleEditGrade(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('edit-grade-id').value;
+            const name = document.getElementById('edit-grade-name').value.trim();
+            const badgeFile = document.getElementById('edit-badge-upload').files[0];
+            const currentBadgeUrl = document.getElementById('edit-current-badge-url').value;
+            
+            if (!name) {
+                showAlert('请输入等级名称', 'error');
+                return;
+            }
+            
+            try {
+                let badgeUrl = currentBadgeUrl;
+                
+                // 如果有上传新图片，先上传
+                if (badgeFile) {
+                    badgeUrl = await uploadImage(badgeFile, 'misc');
+                }
+                
+                // 更新等级
+                const response = await fetch(`/api/grades/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        badge_url: badgeUrl
+                    })
+                });
+                
+                // 检查是否是401未授权错误
+                if (response.status === 401) {
+                    showAlert('会话已过期，请重新登录', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/?error=session-expired';
+                    }, 1500);
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('等级更新成功！', 'success');
+                    closeEditModal();
+                    loadGrades();
+                } else {
+                    showAlert('更新失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('更新等级时发生错误：' + error.message, 'error');
+            }
+        }
+        
+        // 删除等级
+        async function deleteGrade(id, name) {
+            if (!confirm(`确定要删除等级 "${name}" 吗？\n\n此操作不可撤销！`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/grades/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                // 检查是否是401未授权错误
+                if (response.status === 401) {
+                    showAlert('会话已过期，请重新登录', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/?error=session-expired';
+                    }, 1500);
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('等级删除成功！', 'success');
+                    loadGrades();
+                } else {
+                    showAlert('删除失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('删除等级时发生错误：' + error.message, 'error');
+            }
+        }
+        
+        // 上传图片
+        async function uploadImage(file, category = 'misc') {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('category', category);
+            
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+            
+            // 检查是否是401未授权错误
+            if (response.status === 401) {
+                showAlert('会话已过期，请重新登录', 'error');
+                setTimeout(() => {
+                    window.location.href = '/?error=session-expired';
+                }, 1500);
+                throw new Error('会话已过期');
+            }
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.message || '图片上传失败');
+            }
+            
+            return result.data.url;
+        }
+        
+        // 处理图片预览
+        function handleImagePreview(e, previewContainerId, previewImgId, fileNameId) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById(previewContainerId).style.display = 'block';
+                    document.getElementById(previewImgId).src = event.target.result;
+                    document.getElementById(fileNameId).textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // 显示提示消息
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'alert-success' : 
+                               type === 'error' ? 'alert-error' : 'alert-info';
+            
+            const alert = document.createElement('div');
+            alert.className = `alert ${alertClass}`;
+            alert.textContent = message;
+            
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        // 格式化日期
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生长过程管理 - 完整版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            min-height: 100vh;
+        }
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .header h1 { color: #2e7d32; font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .header .subtitle { color: #666; font-size: 0.9rem; }
+        .nav-buttons { margin-top: 1rem; display: flex; gap: 1rem; }
+        .nav-btn {
+            background: #6c757d; color: white; text-decoration: none;
+            padding: 0.5rem 1rem; border-radius: 5px; font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        .nav-btn:hover { background: #5a6268; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 2rem 4rem; }
+        
+        /* 标签页样式 */
+        .tabs-navigation {
+            background: white;
+            border-radius: 15px 15px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0;
+        }
+        .tabs-nav {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 1.2rem;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button:hover {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .tab-button.active {
+            background: white;
+            color: #2e7d32;
+            border-bottom-color: #66bb6a;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 表单卡片样式 */
+        .form-card {
+            background: white; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden; margin-bottom: 2rem;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+            color: white; padding: 1.5rem 2rem;
+            font-size: 1.3rem; font-weight: 600;
+        }
+        .card-header-secondary {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+        }
+        .card-body { padding: 2rem; }
+        .section-title {
+            color: #2e7d32; font-size: 1.1rem; font-weight: 600;
+            margin-bottom: 1rem; padding-bottom: 0.5rem;
+            border-bottom: 2px solid #66bb6a;
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label {
+            display: block; color: #333; font-weight: 500; margin-bottom: 0.5rem;
+        }
+        .form-group label .required { color: #dc3545; margin-left: 3px; }
+        .form-control {
+            width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0;
+            border-radius: 8px; font-size: 0.9rem; transition: all 0.3s;
+        }
+        .form-control:focus {
+            outline: none; border-color: #66bb6a;
+            box-shadow: 0 0 0 3px rgba(102, 187, 106, 0.1);
+        }
+        textarea.form-control {
+            min-height: 100px; resize: vertical; font-family: inherit;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .image-upload-area {
+            border: 2px dashed #66bb6a; border-radius: 8px; padding: 2rem;
+            text-align: center; background: #f5f5f5; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .image-upload-area:hover {
+            background: #e8f5e9; border-color: #43a047;
+        }
+        .image-preview-container { margin-top: 1rem; position: relative; }
+        .image-preview {
+            max-width: 100%; max-height: 300px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .image-actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem; margin-top: 1rem;
+        }
+        .gallery-item {
+            position: relative; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .gallery-item img {
+            width: 100%; height: 150px; object-fit: cover;
+        }
+        .gallery-item .remove-btn {
+            position: absolute; top: 5px; right: 5px; background: #dc3545;
+            color: white; border: none; border-radius: 50%;
+            width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+        .gallery-item .remove-btn:hover {
+            background: #c82333; transform: scale(1.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+            color: white; border: none; padding: 0.75rem 2rem;
+            border-radius: 8px; cursor: pointer; font-size: 1rem;
+            font-weight: 600; transition: all 0.3s; display: inline-block;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #78909c 0%, #546e7a 100%);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+        }
+        .btn-small {
+            padding: 0.5rem 1rem; font-size: 0.85rem;
+        }
+        .readonly-field {
+            background: #f8f9fa; color: #666; cursor: not-allowed;
+        }
+        .info-box {
+            background: #e3f2fd; border-left: 4px solid #2196f3;
+            padding: 1rem; border-radius: 5px; margin-bottom: 1rem;
+        }
+        .info-box .info-icon {
+            display: inline-block; margin-right: 0.5rem; font-weight: 600;
+        }
+        .success-message {
+            background: #d4edda; color: #155724; padding: 1rem;
+            border-radius: 8px; margin-bottom: 1rem; border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            background: #f8d7da; color: #721c24; padding: 1rem;
+            border-radius: 8px; margin-bottom: 1rem; border: 1px solid #f5c6cb;
+        }
+        .hidden { display: none !important; }
+        .loading { text-align: center; padding: 2rem; color: #666; }
+        .save-button-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .save-button-container .btn {
+            font-size: 1.1rem;
+            padding: 1rem 3rem;
+        }
+        .logs-list {
+            margin-top: 1rem;
+        }
+        .log-item {
+            background: #f8f9fa;
+            border-left: 4px solid #42a5f5;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .log-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        .log-item-info h4 {
+            color: #1e88e5;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+        .log-item-info p {
+            color: #666;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        .log-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        .query-row {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            margin-bottom: 1.5rem;
+        }
+        .query-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .editing-mode-banner {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .editing-mode-banner strong {
+            font-size: 1.05rem;
+        }
+        
+        /* 月份总结特定样式 */
+        .summary-display {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .summary-section {
+            margin-bottom: 2rem;
+        }
+        .summary-section h3 {
+            color: #2e7d32;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 0 1rem; }
+            .card-body { padding: 1.5rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .tab-button { font-size: 0.95rem; padding: 1rem; }
+            .log-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .log-item-actions {
+                margin-top: 1rem;
+                width: 100%;
+            }
+            .log-item-actions .btn {
+                flex: 1;
+            }
+            .query-row {
+                flex-direction: column;
+            }
+            .query-row .form-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌿 生长过程管理</h1>
+        <p class="subtitle">记录并管理茶园的每日生长情况和月度总结</p>
+        <div class="nav-buttons">
+            <a href="/dashboard" class="nav-btn">← 返回仪表板</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 提示信息 -->
+        <div id="message-container"></div>
+
+        <!-- 标签页导航 -->
+        <div class="tabs-navigation">
+            <div class="tabs-nav">
+                <button class="tab-button active" data-tab="daily">📅 每日生长管理</button>
+                <button class="tab-button" data-tab="monthly">📊 月份总结</button>
+            </div>
+        </div>
+
+        <!-- 标签页内容 -->
+        <!-- 第一个标签页：每日生长管理 -->
+        <div id="daily-tab" class="tab-content active">
+            <!-- 查询与编辑以往记录 -->
+            <div class="form-card">
+                <div class="card-header card-header-secondary">🔍 查询与编辑以往记录</div>
+                <div class="card-body">
+                    <div class="query-row">
+                        <div class="form-group">
+                            <label for="query-month">选择月份</label>
+                            <input type="month" id="query-month" class="form-control">
+                        </div>
+                        <button type="button" class="btn" onclick="queryLogs()">🔎 查询记录</button>
+                    </div>
+
+                    <div id="logs-list-container" class="logs-list">
+                        <p style="color: #999; text-align: center;">请选择月份并点击"查询记录"按钮</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 编辑模式提示 -->
+            <div id="editing-mode-banner" class="editing-mode-banner hidden">
+                <div>
+                    <strong>📝 编辑模式</strong>
+                    <p style="margin: 0.25rem 0 0 0;">正在编辑日志，修改完成后点击保存按钮</p>
+                </div>
+                <button type="button" class="btn btn-warning btn-small" onclick="cancelEdit()">
+                    ❌ 取消编辑 / 新增日志
+                </button>
+            </div>
+
+            <!-- 隐藏字段：存储正在编辑的日志ID -->
+            <input type="hidden" id="editing-log-id">
+
+            <!-- 主表单 -->
+            <form id="daily-log-form">
+                <!-- 第一部分：卡片信息 -->
+                <div class="form-card">
+                    <div class="card-header">📋 每日日志卡片信息</div>
+                    <div class="card-body">
+                        <!-- 主图 -->
+                        <div class="form-group">
+                            <label>主图 <span class="required">*</span></label>
+                            <div class="image-upload-area" onclick="document.getElementById('main-image-input').click()">
+                                <p style="margin: 0; font-size: 1rem; color: #666;">
+                                    📷 点击上传主图<br>
+                                    <small style="color: #999;">支持 JPG、PNG 格式，最大 5MB</small>
+                                </p>
+                            </div>
+                            <input type="file" id="main-image-input" accept="image/*" style="display: none;">
+                            
+                            <div id="main-image-preview-container" class="image-preview-container hidden">
+                                <img id="main-image-preview" class="image-preview" alt="主图预览">
+                                <div class="image-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('main-image-input').click()">
+                                        🔄 替换图片
+                                    </button>
+                                    <button type="button" class="btn btn-danger" onclick="removeMainImage()">
+                                        🗑️ 删除主图
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="main-image-url">
+                        </div>
+
+                        <!-- 基本信息 -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="log-date">日期 <span class="required">*</span></label>
+                                <input type="date" id="log-date" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="weather">天气</label>
+                                <select id="weather" class="form-control">
+                                    <option value="">请选择天气</option>
+                                    <option value="晴天">☀️ 晴天</option>
+                                    <option value="多云">⛅ 多云</option>
+                                    <option value="阴天">☁️ 阴天</option>
+                                    <option value="雨天">🌧️ 雨天</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>温度范围</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="min-temperature" class="form-control" placeholder="最低温" style="flex: 1;">
+                                    <span>~</span>
+                                    <input type="number" id="max-temperature" class="form-control" placeholder="最高温" style="flex: 1;">
+                                    <span>℃</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="plot-id">地块信息</label>
+                                <select id="plot-id" class="form-control">
+                                    <option value="">加载中...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="recorder-name">记录人</label>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div id="recorder-avatar" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid #ddd; background: #f0f0f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <span style="color: #999; font-size: 0.8rem;">暂无</span>
+                                    </div>
+                                    <select id="recorder-name" class="form-control" style="flex: 1;">
+                                        <option value="">选择记录人...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="farm-activity-type">农事活动</label>
+                                <select id="farm-activity-type" class="form-control">
+                                    <option value="无">无</option>
+                                    <option value="施肥">🌱 施肥</option>
+                                    <option value="修剪">✂️ 修剪</option>
+                                    <option value="灌溉">💧 灌溉</option>
+                                    <!-- ❌ 采摘选项已移除 - 请在"批次追溯管理"中录入采摘记录 -->
+                                    <option value="异常">⚠️ 异常</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- ℹ️ 采摘记录统一管理说明 -->
+                        <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+                            <strong>📢 采摘记录管理说明：</strong>
+                            <p style="margin: 0.5rem 0 0 0;">
+                                所有采摘记录请前往 <a href="/admin/traceability-management" style="color: #d84315; font-weight: 600; text-decoration: none;">🔍 批次追溯管理</a> 页面进行统一录入和管理。
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="summary">核心日志摘要 <span class="required">*</span></label>
+                            <textarea id="summary" class="form-control" rows="4" required placeholder="请简要描述今日茶园生长情况..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二部分：详情页信息 -->
+                <div class="form-card">
+                    <div class="card-header">📸 每日生长详情页信息</div>
+                    <div class="card-body">
+                        <!-- 图片画廊 -->
+                        <div class="form-group">
+                            <label>图片画廊</label>
+                            <div class="image-upload-area" onclick="document.getElementById('gallery-input').click()">
+                                <p style="margin: 0; font-size: 1rem; color: #666;">
+                                    📷 点击上传多张图片<br>
+                                    <small style="color: #999;">可一次选择多张图片</small>
+                                </p>
+                            </div>
+                            <input type="file" id="gallery-input" accept="image/*" multiple style="display: none;">
+                            <div id="gallery-preview" class="gallery-grid"></div>
+                        </div>
+
+                        <!-- 只读联动信息 -->
+                        <div class="section-title" style="margin-top: 2rem;">📌 拍摄信息（自动同步）</div>
+                        <div class="info-box">
+                            <span class="info-icon">ℹ️</span>
+                            以下信息将自动从上方"卡片信息"中同步
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>拍摄日期</label>
+                                <input type="text" id="photo-date" class="form-control readonly-field" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>地块信息</label>
+                                <input type="text" id="photo-plot" class="form-control readonly-field" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>拍摄人</label>
+                                <input type="text" id="photo-person" class="form-control readonly-field" readonly>
+                            </div>
+                        </div>
+
+                        <!-- 环境数据 -->
+                        <div class="section-title" style="margin-top: 2rem;">🌡️ 环境数据</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sunshine-hours">日照时间</label>
+                                <input type="text" id="sunshine-hours" class="form-control" placeholder="例如：8小时">
+                            </div>
+                            <div class="form-group">
+                                <label for="rainfall">今日降水</label>
+                                <input type="text" id="rainfall" class="form-control" placeholder="例如：5mm">
+                            </div>
+                            <div class="form-group">
+                                <label for="avg-temperature">平均温度</label>
+                                <input type="text" id="avg-temperature" class="form-control" placeholder="例如：22°C">
+                            </div>
+                            <div class="form-group">
+                                <label for="humidity">湿度</label>
+                                <input type="text" id="humidity" class="form-control" placeholder="例如：65%">
+                            </div>
+                        </div>
+
+                        <!-- 详细日记 -->
+                        <div class="section-title" style="margin-top: 2rem;">📝 详细日记</div>
+                        <div class="form-group">
+                            <label for="full-log">生长日记</label>
+                            <textarea id="full-log" class="form-control" rows="6" placeholder="详细记录今日茶园生长情况..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="phenological-observation">物候观察</label>
+                            <textarea id="phenological-observation" class="form-control" rows="4" placeholder="记录植物生长阶段、物候现象等..."></textarea>
+                        </div>
+
+                        <!-- 农事活动详情 -->
+                        <div id="farm-activity-detail-section" class="hidden">
+                            <div class="section-title" style="margin-top: 2rem;">🚜 农事活动详情</div>
+                            <div class="form-group">
+                                <label id="activity-details-label" for="farm-activity-log">活动详细记录</label>
+                                <textarea id="farm-activity-log" class="form-control" rows="5" placeholder="详细描述农事活动的内容、过程等..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 异常事件记录 -->
+                        <div id="abnormal-event-section" class="hidden">
+                            <div class="section-title" style="margin-top: 2rem;">⚠️ 异常事件记录</div>
+                            <div class="info-box" style="background: #fff3cd; border-left-color: #ffc107; margin-bottom: 1rem;">
+                                <span class="info-icon">💡</span>
+                                如果当天发生异常情况（如病虫害、自然灾害等），请填写以下信息。
+                            </div>
+                            <div class="form-group">
+                                <label for="abnormal-title">异常标题</label>
+                                <input type="text" id="abnormal-title" class="form-control" placeholder="例如：发现病虫害">
+                            </div>
+                            <div class="form-group">
+                                <label for="abnormal-description">异常描述</label>
+                                <textarea id="abnormal-description" class="form-control" rows="3" placeholder="详细描述异常情况..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="abnormal-measures">已采取措施</label>
+                                <input type="text" id="abnormal-measures" class="form-control" placeholder="例如：已喷洒有机农药">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- 保存按钮 -->
+            <div class="save-button-container">
+                <button type="button" class="btn" onclick="saveLog()" id="save-btn">💾 保存此条日志</button>
+                <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                    保存后您可以选择继续添加新日志或返回仪表板
+                </p>
+            </div>
+        </div>
+
+        <!-- 第二个标签页：月份总结 -->
+        <div id="monthly-tab" class="tab-content">
+            <!-- 已保存的月度总结列表 -->
+            <div class="form-card">
+                <div class="card-header card-header-secondary">📋 已保存的月度总结</div>
+                <div class="card-body">
+                    <div id="summary-list-container" class="logs-list">
+                        <p style="color: #999; text-align: center;">加载中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 编辑模式提示 -->
+            <div id="editing-summary-banner" class="editing-mode-banner hidden">
+                <div>
+                    <strong>📝 编辑模式</strong>
+                    <p style="margin: 0.25rem 0 0 0;">正在编辑月度总结，修改完成后点击保存按钮</p>
+                </div>
+                <button type="button" class="btn btn-warning btn-small" onclick="cancelSummaryEdit()">
+                    ❌ 取消编辑 / 新增总结
+                </button>
+            </div>
+
+            <!-- 隐藏字段：存储正在编辑的总结ID -->
+            <input type="hidden" id="editing-summary-id">
+
+            <div class="form-card">
+                <div class="card-header">📊 月度汇总管理</div>
+                <div class="card-body">
+                    <div class="query-row">
+                        <div class="form-group">
+                            <label for="summary-month">选择月份</label>
+                            <input type="month" id="summary-month" class="form-control">
+                        </div>
+                        <button type="button" class="btn" onclick="generateSummary()">🔄 生成/刷新本月总结</button>
+                    </div>
+
+                    <!-- 汇总显示区域 -->
+                    <div id="summary-display" class="summary-display hidden">
+                        <div class="info-box" style="background: #e8f5e9; border-left-color: #66bb6a;">
+                            <span class="info-icon">✏️</span>
+                            所有数据均可手动编辑。修改后请点击底部的"保存所有总结修改"按钮。
+                        </div>
+
+                        <!-- 顶部影像画廊管理 -->
+                        <div class="summary-section">
+                            <h3>🖼️ 顶部影像画廊</h3>
+                            <div class="form-group">
+                                <label>上传图片/视频</label>
+                                <div class="image-upload-area" onclick="document.getElementById('gallery-upload-input').click()">
+                                    <p style="margin: 0; font-size: 1rem; color: #666;">
+                                        📷 点击上传图片或视频<br>
+                                        <small style="color: #999;">可一次选择多个文件，支持 JPG、PNG、MP4 等格式</small>
+                                    </p>
+                                </div>
+                                <input type="file" id="gallery-upload-input" accept="image/*,video/*" multiple style="display: none;">
+                            </div>
+
+                            <!-- 画廊预览区域 -->
+                            <div id="top-gallery-preview" class="gallery-grid"></div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>📈 采摘统计</h3>
+                            <div class="info-box" style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+                                <strong>💡 温馨提示：</strong>
+                                <p style="margin: 0.5rem 0 0 0;">
+                                    采摘统计数据由系统自动从 <a href="/admin/traceability-management" style="color: #d84315; font-weight: 600; text-decoration: none;">🔍 批次追溯管理</a> 中的采摘记录计算生成。
+                                    <br>如需修改采摘数据，请前往该页面进行管理。
+                                </p>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="harvest-count">采摘次数（自动生成）</label>
+                                    <input type="number" id="harvest-count" class="form-control" min="0" step="1" placeholder="由系统自动计算" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                                </div>
+                                <div class="form-group">
+                                    <label for="harvest-weight">总重量（公斤）（自动生成）</label>
+                                    <input type="number" id="harvest-weight" class="form-control" min="0" step="0.1" placeholder="由系统自动计算" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>📅 农事日历</h3>
+                            <div class="form-group">
+                                <textarea id="farm-calendar-display" class="form-control" rows="6" placeholder="例如：&#10;3日 施肥&#10;15日 修剪&#10;28日 采摘"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>⚠️ 异常事件汇总</h3>
+                            <div class="form-group">
+                                <textarea id="abnormal-events-display" class="form-control" rows="5" placeholder="例如：&#10;2025-01-15 发现病虫害，已喷洒有机农药&#10;2025-01-20 部分茶树叶片发黄，增加施肥"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>🌤️ 气候总结</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="avg-temp-display">平均温度</label>
+                                    <input type="text" id="avg-temp-display" class="form-control" placeholder="例如：17~25℃">
+                                </div>
+                                <div class="form-group">
+                                    <label for="total-precipitation-display">总降水</label>
+                                    <input type="text" id="total-precipitation-display" class="form-control" placeholder="例如：约5天有降水">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-section">
+                            <h3>📝 下月计划</h3>
+                            <div class="form-group">
+                                <textarea id="next-month-plan" class="form-control" rows="8" placeholder="请输入下月计划，每行一条..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 统一保存按钮 -->
+                        <div class="save-button-container" style="margin-top: 2rem;">
+                            <button type="button" class="btn" onclick="saveAllSummaryChanges()">💾 保存所有总结修改</button>
+                            <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                                保存后将更新所有已修改的统计数据
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 助手集成 -->
+    <script src="https://o.alicdn.com/appflow/chatbot/v1/AppflowChatSDK.js"></script>
+    <script>
+        window.APPFLOW_CHAT_SDK.init({
+            integrateConfig: {
+                integrateId: 'cit-4d7f8b8ad2c5463ca79e',
+                domain: { requestDomain: 'https://1524787808648067.appflow.aliyunnest.com' },
+                draggable: true
+            }
+        });
+    </script>
+
+    <script>
+        // ==================== 全局变量 ====================
+        let mainImageUrl = '';
+        let galleryUrls = [];
+        let topGalleryUrls = []; // 顶部影像画廊 URL 数组
+        let availablePlots = [];
+        let existingDates = [];
+        let currentSummaryId = null;
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('log-date').value = today;
+            
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            document.getElementById('query-month').value = currentMonth;
+            document.getElementById('summary-month').value = currentMonth;
+            
+            loadPlots();
+            loadRecorders(); // 加载记录人列表
+            loadExistingDates();
+            setupEventListeners();
+            setupTabNavigation();
+            updateSyncFields();
+            
+            // 加载月度总结列表
+            fetchAndRenderSummaries();
+            
+            // 设置顶部画廊上传事件
+            document.getElementById('gallery-upload-input').addEventListener('change', handleTopGalleryUpload);
+        });
+
+        // ==================== 标签页切换 ====================
+        function setupTabNavigation() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    
+                    // 移除所有活动状态
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // 添加活动状态到当前标签
+                    button.classList.add('active');
+                    document.getElementById(`${targetTab}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // ==================== 数据加载 ====================
+        async function loadPlots() {
+            try {
+                const response = await fetch('/api/plots');
+                const result = await response.json();
+                if (result.success && result.data) {
+                    availablePlots = result.data;
+                    const plotSelect = document.getElementById('plot-id');
+                    plotSelect.innerHTML = '<option value="">请选择地块</option>';
+                    result.data.forEach(plot => {
+                        const option = document.createElement('option');
+                        option.value = plot._id;
+                        option.textContent = plot.name;
+                        plotSelect.appendChild(option);
+                    });
+                    console.log('✅ 成功加载', result.data.length, '个地块');
+                }
+            } catch (error) {
+                console.error('加载地块列表失败:', error);
+                document.getElementById('plot-id').innerHTML = '<option value="">加载失败</option>';
+            }
+        }
+
+        async function loadExistingDates() {
+            try {
+                const response = await fetch('/api/growth-logs/existing-dates');
+                const result = await response.json();
+                if (result.success && result.data) {
+                    existingDates = result.data;
+                    console.log('✅ 成功加载', result.data.length, '个已存在的日志日期');
+                }
+            } catch (error) {
+                console.error('加载已有日期列表失败:', error);
+            }
+        }
+
+        async function loadRecorders() {
+            try {
+                const response = await fetch('/api/personnel?role=记录人');
+                const result = await response.json();
+                if (result.success && result.data) {
+                    const recorderSelect = document.getElementById('recorder-name');
+                    recorderSelect.innerHTML = '<option value="">请选择记录人</option>';
+                    result.data.forEach(recorder => {
+                        const option = document.createElement('option');
+                        option.value = recorder.name;
+                        option.textContent = recorder.name;
+                        option.dataset.avatar = recorder.avatar_url || '';
+                        recorderSelect.appendChild(option);
+                    });
+                    console.log('✅ 成功加载', result.data.length, '个记录人');
+                }
+            } catch (error) {
+                console.error('加载记录人列表失败:', error);
+                document.getElementById('recorder-name').innerHTML = '<option value="">加载失败</option>';
+            }
+        }
+
+        // ==================== 事件监听器设置 ====================
+        function setupEventListeners() {
+            document.getElementById('main-image-input').addEventListener('change', handleMainImageUpload);
+            document.getElementById('gallery-input').addEventListener('change', handleGalleryUpload);
+            document.getElementById('farm-activity-type').addEventListener('change', handleFarmActivityChange);
+            document.getElementById('log-date').addEventListener('change', handleDateChange);
+            document.getElementById('plot-id').addEventListener('change', updateSyncFields);
+            document.getElementById('recorder-name').addEventListener('input', updateSyncFields);
+            document.getElementById('recorder-name').addEventListener('change', handleRecorderChange);
+        }
+
+        /**
+         * 处理记录人选择变化，更新头像显示
+         */
+        function handleRecorderChange() {
+            const recorderSelect = document.getElementById('recorder-name');
+            const selectedOption = recorderSelect.options[recorderSelect.selectedIndex];
+            const avatarUrl = selectedOption.dataset.avatar || '';
+            
+            // 更新头像显示
+            updateAvatar('recorder-avatar', avatarUrl);
+        }
+
+        /**
+         * 更新人员头像显示
+         * @param {string} containerId - 头像容器的ID
+         * @param {string} avatarUrl - 头像URL
+         */
+        function updateAvatar(containerId, avatarUrl) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (avatarUrl && avatarUrl.trim() !== '') {
+                // 有头像，显示图片
+                container.innerHTML = `<img src="${avatarUrl}" alt="头像" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                // 没有头像，显示默认提示
+                container.innerHTML = '<span style="color: #999; font-size: 0.8rem;">暂无</span>';
+            }
+        }
+
+        function handleDateChange() {
+            const selectedDate = document.getElementById('log-date').value;
+            const editingId = document.getElementById('editing-log-id').value;
+            
+            if (!editingId && selectedDate && existingDates.includes(selectedDate)) {
+                const dateObj = new Date(selectedDate);
+                const dateStr = dateObj.toLocaleDateString('zh-CN');
+                
+                showMessage(`⚠️ 该日期（${dateStr}）已存在日志记录！请选择其他日期或查询并编辑已有记录。`, 'error');
+                
+                document.getElementById('log-date').value = '';
+                
+                setTimeout(() => {
+                    if (confirm(`该日期（${dateStr}）已有记录。\n\n是否要查询并查看该记录？`)) {
+                        const yearMonth = selectedDate.substring(0, 7);
+                        document.getElementById('query-month').value = yearMonth;
+                        queryLogs();
+                        document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 500);
+            } else {
+                updateSyncFields();
+            }
+        }
+
+        function handleFarmActivityChange() {
+            const activityType = document.getElementById('farm-activity-type').value;
+            const detailSection = document.getElementById('farm-activity-detail-section');
+            const activityLabel = document.getElementById('activity-details-label');
+            const abnormalSection = document.getElementById('abnormal-event-section');
+            
+            // 控制农事活动详情框
+            if (activityType && activityType !== '无') {
+                detailSection.classList.remove('hidden');
+                
+                const cleanActivityType = activityType.replace(/^[\u{1F000}-\u{1F9FF}]\s*/u, '').trim();
+                activityLabel.textContent = cleanActivityType + '详情';
+                
+                console.log('🔄 农事活动标签已更新为:', cleanActivityType + '详情');
+            } else {
+                detailSection.classList.add('hidden');
+                activityLabel.textContent = '活动详细记录';
+            }
+            
+            // 控制异常事件记录显示/隐藏
+            const cleanActivityType = activityType.replace(/^[\u{1F000}-\u{1F9FF}]\s*/u, '').trim();
+            if (cleanActivityType === '异常') {
+                abnormalSection.classList.remove('hidden');
+                console.log('⚠️ 已显示异常事件记录编辑框');
+            } else {
+                abnormalSection.classList.add('hidden');
+                // 隐藏时清空异常事件字段
+                document.getElementById('abnormal-title').value = '';
+                document.getElementById('abnormal-description').value = '';
+                document.getElementById('abnormal-measures').value = '';
+                console.log('✅ 已隐藏异常事件记录编辑框');
+            }
+            
+            // ❌ 采摘相关逻辑已移除 - 采摘记录统一在"批次追溯管理"中管理
+        }
+
+        // ==================== 查询功能 ====================
+        async function queryLogs() {
+            const month = document.getElementById('query-month').value;
+            if (!month) {
+                showMessage('请选择要查询的月份', 'error');
+                return;
+            }
+
+            try {
+                showMessage('正在查询日志...', 'info');
+                
+                const response = await fetch(`/api/growth-logs?month=${month}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayLogsList(result.data);
+                    showMessage(`✅ 查询成功！找到 ${result.data.length} 条记录`, 'success');
+                    console.log('✅ 查询到', result.data.length, '条日志');
+                } else {
+                    showMessage('❌ 查询失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('查询日志时发生错误:', error);
+                showMessage('❌ 查询失败：' + error.message, 'error');
+            }
+        }
+
+        function displayLogsList(logs) {
+            const container = document.getElementById('logs-list-container');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center;">该月份暂无记录</p>';
+                return;
+            }
+
+            container.innerHTML = logs.map(log => {
+                const date = new Date(log.date).toLocaleDateString('zh-CN');
+                const summary = log.summary ? (log.summary.length > 50 ? log.summary.substring(0, 50) + '...' : log.summary) : '无摘要';
+                
+                return `
+                    <div class="log-item">
+                        <div class="log-item-info">
+                            <h4>📅 ${date} ${log.recorder_name ? '- ' + log.recorder_name : ''}</h4>
+                            <p>${summary}</p>
+                        </div>
+                        <div class="log-item-actions">
+                            <button class="btn btn-secondary btn-small" onclick="editLog('${log._id}')">
+                                ✏️ 编辑
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteLog('${log._id}')">
+                                🗑️ 删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==================== 编辑功能 ====================
+        async function editLog(id) {
+            try {
+                showMessage('正在加载日志数据...', 'info');
+                
+                const response = await fetch(`/api/growth-logs/${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const log = result.data;
+                    
+                    document.getElementById('editing-log-id').value = id;
+                    document.getElementById('editing-mode-banner').classList.remove('hidden');
+                    
+                    fillFormWithLogData(log);
+                    
+                    document.getElementById('save-btn').innerHTML = '💾 更新此条日志';
+                    document.getElementById('daily-log-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    showMessage('✅ 日志数据已加载，请修改后点击更新按钮', 'success');
+                    console.log('✅ 编辑模式：已加载日志数据', log);
+                } else {
+                    showMessage('❌ 加载失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('加载日志数据时发生错误:', error);
+                showMessage('❌ 加载失败：' + error.message, 'error');
+            }
+        }
+
+        function fillFormWithLogData(log) {
+            document.getElementById('log-date').value = log.date.split('T')[0];
+            document.getElementById('recorder-name').value = log.recorder_name || '';
+            
+            // 更新记录人头像
+            const recorderSelect = document.getElementById('recorder-name');
+            const selectedOption = recorderSelect.options[recorderSelect.selectedIndex];
+            if (selectedOption) {
+                const avatarUrl = selectedOption.dataset.avatar || '';
+                updateAvatar('recorder-avatar', avatarUrl);
+            }
+            
+            document.getElementById('summary').value = log.summary || '';
+            
+            mainImageUrl = log.main_image_url || '';
+            document.getElementById('main-image-url').value = mainImageUrl;
+            if (mainImageUrl) {
+                document.getElementById('main-image-preview').src = mainImageUrl;
+                document.getElementById('main-image-preview-container').classList.remove('hidden');
+            }
+            
+            document.getElementById('weather').value = log.weather?.icon || '';
+            
+            // 解析温度范围
+            const tempRange = log.weather?.temperature_range || '';
+            if (tempRange) {
+                // 移除℃符号并按~分割
+                const cleanTemp = tempRange.replace(/℃/g, '').trim();
+                const temps = cleanTemp.split('~');
+                if (temps.length === 2) {
+                    document.getElementById('min-temperature').value = temps[0].trim();
+                    document.getElementById('max-temperature').value = temps[1].trim();
+                } else if (temps.length === 1) {
+                    // 只有一个值，放在最低温度
+                    document.getElementById('min-temperature').value = temps[0].trim();
+                    document.getElementById('max-temperature').value = '';
+                }
+            } else {
+                document.getElementById('min-temperature').value = '';
+                document.getElementById('max-temperature').value = '';
+            }
+            
+            document.getElementById('plot-id').value = log.plot_id?._id || log.plot_id || '';
+            document.getElementById('farm-activity-type').value = log.farm_activity_type || '无';
+            // ❌ 采摘重量字段已移除
+            
+            handleFarmActivityChange();
+            
+            galleryUrls = log.detail_gallery || [];
+            renderGallery();
+            
+            document.getElementById('sunshine-hours').value = log.environment_data?.sunshine_hours || '';
+            document.getElementById('rainfall').value = log.environment_data?.rainfall || '';
+            document.getElementById('avg-temperature').value = log.environment_data?.temperature || '';
+            document.getElementById('humidity').value = log.environment_data?.humidity || '';
+            
+            document.getElementById('full-log').value = log.full_log || '';
+            document.getElementById('phenological-observation').value = log.phenological_observation || '';
+            document.getElementById('farm-activity-log').value = log.farm_activity_log || '';
+            
+            // 填充异常事件数据
+            document.getElementById('abnormal-title').value = log.abnormal_event?.title || '';
+            document.getElementById('abnormal-description').value = log.abnormal_event?.description || '';
+            document.getElementById('abnormal-measures').value = log.abnormal_event?.measures_taken || '';
+            
+            updateSyncFields();
+        }
+
+        function cancelEdit() {
+            if (confirm('确定要取消编辑吗？未保存的修改将丢失。')) {
+                document.getElementById('editing-log-id').value = '';
+                document.getElementById('editing-mode-banner').classList.add('hidden');
+                document.getElementById('save-btn').innerHTML = '💾 保存此条日志';
+                
+                clearForm();
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('log-date').value = today;
+                
+                showMessage('已取消编辑，可以新增日志', 'info');
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('daily-log-form').reset();
+            
+            mainImageUrl = '';
+            document.getElementById('main-image-url').value = '';
+            document.getElementById('main-image-preview').src = '';
+            document.getElementById('main-image-preview-container').classList.add('hidden');
+            document.getElementById('main-image-input').value = '';
+            
+            galleryUrls = [];
+            renderGallery();
+            
+            document.getElementById('farm-activity-detail-section').classList.add('hidden');
+            // ❌ harvest-weight-section 已移除
+            
+            // 清空记录人头像
+            updateAvatar('recorder-avatar', '');
+            
+            updateSyncFields();
+        }
+
+        // ==================== 删除功能 ====================
+        async function deleteLog(id) {
+            if (!confirm('确定要删除这条日志吗？此操作不可撤销！')) {
+                return;
+            }
+
+            try {
+                showMessage('正在删除日志...', 'info');
+                
+                const response = await fetch(`/api/growth-logs/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 日志已成功删除', 'success');
+                    loadExistingDates();
+                    queryLogs();
+                    console.log('✅ 已删除日志:', id);
+                } else {
+                    showMessage('❌ 删除失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('删除日志时发生错误:', error);
+                showMessage('❌ 删除失败：' + error.message, 'error');
+            }
+        }
+
+        // ==================== 保存功能 ====================
+        async function saveLog() {
+            try {
+                const logDate = document.getElementById('log-date').value;
+                const summary = document.getElementById('summary').value.trim();
+                
+                if (!logDate) {
+                    showMessage('请选择日期', 'error');
+                    return;
+                }
+                if (!summary) {
+                    showMessage('请填写核心日志摘要', 'error');
+                    return;
+                }
+
+                const editingId = document.getElementById('editing-log-id').value;
+                const isEditMode = !!editingId;
+
+                if (!isEditMode && !mainImageUrl) {
+                    if (!confirm('尚未上传主图，确定要继续保存吗？')) {
+                        return;
+                    }
+                }
+
+                // 添加保存确认
+                const confirmMessage = isEditMode 
+                    ? '确定要保存对该日志的修改吗？' 
+                    : '确定要保存这条日志吗？';
+                
+                if (!confirm(confirmMessage)) {
+                    showMessage('已取消保存', 'info');
+                    return;
+                }
+
+                const farmActivityType = document.getElementById('farm-activity-type').value;
+                const farmActivityLog = (farmActivityType === '无' || farmActivityType === '') 
+                    ? '' 
+                    : document.getElementById('farm-activity-log').value.trim();
+                
+                // ❌ 采摘重量字段已移除 - 采摘记录统一在"批次追溯管理"中管理
+                const harvestWeight = 0;
+                
+                // 收集异常事件数据
+                const abnormalTitle = document.getElementById('abnormal-title').value.trim();
+                const abnormalData = abnormalTitle ? {
+                    title: abnormalTitle,
+                    description: document.getElementById('abnormal-description').value.trim(),
+                    severity: 'low',  // 默认值，保持数据库模型兼容
+                    measures_taken: document.getElementById('abnormal-measures').value.trim()
+                } : {
+                    title: '',
+                    description: '',
+                    severity: 'low',
+                    measures_taken: ''
+                };
+                
+                // 组合温度范围
+                const minTemp = document.getElementById('min-temperature').value.trim();
+                const maxTemp = document.getElementById('max-temperature').value.trim();
+                let temperatureRange = '';
+                if (minTemp && maxTemp) {
+                    temperatureRange = `${minTemp}~${maxTemp}℃`;
+                } else if (minTemp) {
+                    temperatureRange = `${minTemp}℃`;
+                } else if (maxTemp) {
+                    temperatureRange = `${maxTemp}℃`;
+                }
+                
+                const logData = {
+                    date: logDate,
+                    main_image_url: mainImageUrl,
+                    recorder_name: document.getElementById('recorder-name').value.trim(),
+                    plot_id: document.getElementById('plot-id').value || undefined,
+                    farm_activity_type: farmActivityType,
+                    harvest_weight_kg: harvestWeight,
+                    weather: {
+                        icon: document.getElementById('weather').value,
+                        temperature_range: temperatureRange
+                    },
+                    summary: summary,
+                    detail_gallery: galleryUrls,
+                    photo_info: {
+                        photographer: document.getElementById('recorder-name').value.trim(),
+                        location: document.getElementById('photo-plot').value
+                    },
+                    environment_data: {
+                        sunshine_hours: document.getElementById('sunshine-hours').value.trim(),
+                        rainfall: document.getElementById('rainfall').value.trim(),
+                        temperature: document.getElementById('avg-temperature').value.trim(),
+                        humidity: document.getElementById('humidity').value.trim()
+                    },
+                    full_log: document.getElementById('full-log').value.trim(),
+                    phenological_observation: document.getElementById('phenological-observation').value.trim(),
+                    farm_activity_log: farmActivityLog,
+                    abnormal_event: abnormalData
+                };
+
+                console.log('📤 准备提交日志数据:', logData);
+                showMessage(isEditMode ? '正在更新日志...' : '正在保存日志...', 'info');
+
+                const url = isEditMode ? `/api/growth-logs/${editingId}` : '/api/growth-logs';
+                const method = isEditMode ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(logData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(isEditMode ? '✅ 日志更新成功！' : '✅ 日志保存成功！', 'success');
+                    console.log(isEditMode ? '✅ 日志更新成功:' : '✅ 日志保存成功:', result.data);
+                    
+                    loadExistingDates();
+                    
+                    document.getElementById('editing-log-id').value = '';
+                    document.getElementById('editing-mode-banner').classList.add('hidden');
+                    document.getElementById('save-btn').innerHTML = '💾 保存此条日志';
+                    
+                    const queryMonth = document.getElementById('query-month').value;
+                    if (queryMonth) {
+                        queryLogs();
+                    }
+                    
+                    setTimeout(() => {
+                        if (confirm('操作成功！是否继续添加新日志？\n点击"确定"清空表单，点击"取消"返回仪表板')) {
+                            clearForm();
+                            const today = new Date().toISOString().split('T')[0];
+                            document.getElementById('log-date').value = today;
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else {
+                            window.location.href = '/dashboard';
+                        }
+                    }, 1500);
+                } else {
+                    showMessage('❌ 保存失败：' + result.message, 'error');
+                    console.error('保存失败:', result);
+                }
+            } catch (error) {
+                console.error('保存日志时发生错误:', error);
+                showMessage('❌ 保存失败：' + error.message, 'error');
+            }
+        }
+
+        // ==================== 图片处理 ====================
+        async function handleMainImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showMessage('正在上传主图...', 'info');
+            try {
+                const url = await uploadImage(file);
+                if (url) {
+                    mainImageUrl = url;
+                    document.getElementById('main-image-url').value = url;
+                    const preview = document.getElementById('main-image-preview');
+                    const container = document.getElementById('main-image-preview-container');
+                    preview.src = url;
+                    container.classList.remove('hidden');
+                    showMessage('主图上传成功！', 'success');
+                    console.log('✅ 主图上传成功:', url);
+                }
+            } catch (error) {
+                showMessage('主图上传失败：' + error.message, 'error');
+            }
+        }
+
+        function removeMainImage() {
+            if (confirm('确定要删除主图吗？')) {
+                mainImageUrl = '';
+                document.getElementById('main-image-url').value = '';
+                document.getElementById('main-image-preview').src = '';
+                document.getElementById('main-image-preview-container').classList.add('hidden');
+                document.getElementById('main-image-input').value = '';
+                showMessage('主图已删除', 'info');
+            }
+        }
+
+        async function handleGalleryUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+            showMessage(`正在上传 ${files.length} 张图片...`, 'info');
+            for (let file of files) {
+                try {
+                    const url = await uploadImage(file);
+                    if (url) {
+                        galleryUrls.push(url);
+                        console.log('✅ 图片上传成功:', url);
+                    }
+                } catch (error) {
+                    console.error('图片上传失败:', error);
+                }
+            }
+            renderGallery();
+            showMessage(`成功上传 ${files.length} 张图片！`, 'success');
+            event.target.value = '';
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('gallery-preview');
+            if (galleryUrls.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = galleryUrls.map((url, index) => `
+                <div class="gallery-item">
+                    <img src="${url}" alt="图片 ${index + 1}">
+                    <button type="button" class="remove-btn" onclick="removeGalleryImage(${index})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function removeGalleryImage(index) {
+            if (confirm('确定要删除这张图片吗？')) {
+                galleryUrls.splice(index, 1);
+                renderGallery();
+                showMessage('图片已删除', 'info');
+            }
+        }
+
+        async function uploadImage(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data.fullUrl;
+            } else {
+                throw new Error(result.message || '上传失败');
+            }
+        }
+
+        function updateSyncFields() {
+            const logDate = document.getElementById('log-date').value;
+            document.getElementById('photo-date').value = logDate || '';
+            const plotId = document.getElementById('plot-id').value;
+            const selectedPlot = availablePlots.find(p => p._id === plotId);
+            document.getElementById('photo-plot').value = selectedPlot ? selectedPlot.name : '';
+            const recorderName = document.getElementById('recorder-name').value;
+            document.getElementById('photo-person').value = recorderName || '';
+        }
+
+        // ==================== 顶部影像画廊管理 ====================
+        
+        // 处理顶部画廊上传
+        async function handleTopGalleryUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+            
+            showMessage(`正在上传 ${files.length} 个文件...`, 'info');
+            
+            for (let file of files) {
+                try {
+                    const url = await uploadImage(file);
+                    if (url) {
+                        topGalleryUrls.push(url);
+                        console.log('✅ 文件上传成功:', url);
+                    }
+                } catch (error) {
+                    console.error('文件上传失败:', error);
+                }
+            }
+            
+            renderTopGallery();
+            showMessage(`成功上传 ${files.length} 个文件！`, 'success');
+            event.target.value = ''; // 清空输入框
+        }
+
+        // 渲染顶部影像画廊
+        function renderTopGallery() {
+            const container = document.getElementById('top-gallery-preview');
+            
+            if (topGalleryUrls.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 1rem;">暂无影像，请点击上方上传</p>';
+                return;
+            }
+            
+            container.innerHTML = topGalleryUrls.map((url, index) => {
+                // 判断是图片还是视频
+                const isVideo = url.toLowerCase().match(/\.(mp4|webm|ogg)$/);
+                
+                return `
+                    <div class="gallery-item">
+                        ${isVideo ? 
+                            `<video src="${url}" style="width: 100%; height: 150px; object-fit: cover;"></video>` :
+                            `<img src="${url}" alt="影像 ${index + 1}">`
+                        }
+                        <button type="button" class="remove-btn" onclick="removeTopGalleryImage(${index})">×</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 删除顶部画廊中的图片
+        function removeTopGalleryImage(index) {
+            if (confirm('确定要删除这个文件吗？')) {
+                topGalleryUrls.splice(index, 1);
+                renderTopGallery();
+                showMessage('文件已删除', 'info');
+            }
+        }
+
+        // ==================== 月份总结功能 ====================
+        
+        // 获取并渲染所有已保存的月度总结列表
+        async function fetchAndRenderSummaries() {
+            try {
+                const response = await fetch('/api/summaries');
+                const result = await response.json();
+
+                if (result.success) {
+                    displaySummaryList(result.data);
+                    console.log('✅ 成功加载', result.data.length, '个月度总结');
+                } else {
+                    showMessage('❌ 加载列表失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('获取月度总结列表时发生错误:', error);
+                showMessage('❌ 加载列表失败：' + error.message, 'error');
+            }
+        }
+
+        // 渲染月度总结列表
+        function displaySummaryList(summaries) {
+            const container = document.getElementById('summary-list-container');
+            
+            if (!summaries || summaries.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center;">暂无已保存的月度总结</p>';
+                return;
+            }
+
+            container.innerHTML = summaries.map(summary => {
+                // 格式化年月显示
+                const [year, month] = summary.year_month.split('-');
+                const displayMonth = `${year}年${parseInt(month)}月`;
+                
+                // 提取关键统计信息
+                const harvestCount = summary.harvest_stats?.count || 0;
+                const harvestWeight = summary.harvest_stats?.total_weight || 0;
+                const farmActivitiesCount = summary.farm_calendar ? summary.farm_calendar.split('\n').filter(line => line.trim()).length : 0;
+                
+                return `
+                    <div class="log-item">
+                        <div class="log-item-info">
+                            <h4>📅 ${displayMonth} 总结</h4>
+                            <p>采摘 ${harvestCount} 次 / ${harvestWeight}kg · 农事活动 ${farmActivitiesCount} 项 · 图片 ${summary.detail_gallery?.length || 0} 张</p>
+                        </div>
+                        <div class="log-item-actions">
+                            <button class="btn btn-secondary btn-small" onclick="editSummary('${summary._id}')">
+                                ✏️ 编辑
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteSummary('${summary._id}')">
+                                🗑️ 删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 编辑月度总结
+        async function editSummary(id) {
+            try {
+                showMessage('正在加载总结数据...', 'info');
+                
+                const response = await fetch(`/api/monthly-summaries/${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const summary = result.data;
+                    
+                    // 设置编辑模式
+                    document.getElementById('editing-summary-id').value = id;
+                    document.getElementById('editing-summary-banner').classList.remove('hidden');
+                    
+                    // 填充数据到表单
+                    displaySummary(summary);
+                    
+                    // 滚动到编辑表单
+                    document.getElementById('summary-display').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    showMessage('✅ 总结数据已加载，请修改后点击保存按钮', 'success');
+                    console.log('✅ 编辑模式：已加载总结数据', summary);
+                } else {
+                    showMessage('❌ 加载失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('加载总结数据时发生错误:', error);
+                showMessage('❌ 加载失败：' + error.message, 'error');
+            }
+        }
+
+        // 删除月度总结
+        async function deleteSummary(id) {
+            // 获取要删除的总结信息
+            const summaryElement = event.target.closest('.log-item');
+            const summaryTitle = summaryElement.querySelector('h4').textContent;
+            
+            if (!confirm(`确定要删除"${summaryTitle}"吗？\n此操作不可撤销！`)) {
+                return;
+            }
+
+            try {
+                showMessage('正在删除总结...', 'info');
+                
+                const response = await fetch(`/api/monthly-summaries/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 总结已成功删除', 'success');
+                    
+                    // 刷新列表
+                    fetchAndRenderSummaries();
+                    
+                    // 如果正在编辑这条记录，取消编辑模式
+                    if (document.getElementById('editing-summary-id').value === id) {
+                        cancelSummaryEdit();
+                    }
+                    
+                    console.log('✅ 已删除总结:', id);
+                } else {
+                    showMessage('❌ 删除失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('删除总结时发生错误:', error);
+                showMessage('❌ 删除失败：' + error.message, 'error');
+            }
+        }
+
+        // 取消编辑总结
+        function cancelSummaryEdit() {
+            if (confirm('确定要取消编辑吗？未保存的修改将丢失。')) {
+                document.getElementById('editing-summary-id').value = '';
+                document.getElementById('editing-summary-banner').classList.add('hidden');
+                document.getElementById('summary-display').classList.add('hidden');
+                currentSummaryId = null;
+                
+                // 清空顶部画廊
+                topGalleryUrls = [];
+                renderTopGallery();
+                
+                showMessage('已取消编辑，可以生成新的总结', 'info');
+            }
+        }
+
+        async function generateSummary() {
+            const month = document.getElementById('summary-month').value;
+            if (!month) {
+                showMessage('请选择要生成总结的月份', 'error');
+                return;
+            }
+
+            if (!confirm(`确定要为 ${month} 生成月度总结吗？\n如果该月已有总结，将会被更新。`)) {
+                return;
+            }
+
+            try {
+                showMessage('正在生成月度总结...', 'info');
+                
+                const response = await fetch('/api/summaries/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ month: month })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 月度总结生成成功！', 'success');
+                    console.log('✅ 月度总结:', result.data);
+                    
+                    // 自动显示生成的总结
+                    displaySummary(result.data);
+                    
+                    // 刷新列表
+                    fetchAndRenderSummaries();
+                } else {
+                    showMessage('❌ 生成失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('生成月度总结时发生错误:', error);
+                showMessage('❌ 生成失败：' + error.message, 'error');
+            }
+        }
+
+
+        function displaySummary(summary) {
+            // 如果不是编辑模式，设置 currentSummaryId
+            const editingId = document.getElementById('editing-summary-id').value;
+            if (!editingId) {
+                currentSummaryId = summary._id;
+            }
+            
+            // 填充采摘统计到可编辑输入框
+            document.getElementById('harvest-count').value = summary.harvest_stats?.count || 0;
+            document.getElementById('harvest-weight').value = summary.harvest_stats?.total_weight || 0;
+            
+            // 填充农事日历到可编辑文本框
+            document.getElementById('farm-calendar-display').value = summary.farm_calendar || '';
+            
+            // 填充异常事件汇总到可编辑文本框
+            const abnormalDisplay = document.getElementById('abnormal-events-display');
+            if (summary.abnormal_summary && summary.abnormal_summary.length > 0) {
+                // 将异常事件数组转换为可编辑的文本格式
+                const abnormalText = summary.abnormal_summary.map(event => 
+                    `${event.date} ${event.issue}，${event.measures}`
+                ).join('\n');
+                abnormalDisplay.value = abnormalText;
+            } else {
+                abnormalDisplay.value = '';
+            }
+            
+            // 填充气候总结到可编辑输入框
+            document.getElementById('avg-temp-display').value = summary.climate_summary?.avg_temp || '';
+            document.getElementById('total-precipitation-display').value = summary.climate_summary?.total_precipitation || '';
+            
+            // 填充顶部影像画廊
+            topGalleryUrls = summary.detail_gallery || [];
+            renderTopGallery();
+            
+            // 填充下月计划到可编辑文本框
+            const plans = summary.next_month_plan || [];
+            document.getElementById('next-month-plan').value = plans.join('\n');
+            
+            // 显示总结区域
+            document.getElementById('summary-display').classList.remove('hidden');
+            
+            console.log('✅ 月度总结数据已填充到表单，可以进行编辑');
+        }
+
+        async function saveAllSummaryChanges() {
+            // 检查是否有要保存的总结（编辑模式或生成后的总结）
+            const editingId = document.getElementById('editing-summary-id').value;
+            const summaryId = editingId || currentSummaryId;
+            
+            if (!summaryId) {
+                showMessage('请先生成或加载月度总结', 'error');
+                return;
+            }
+
+            // 添加保存确认
+            if (!confirm('确定要保存月度总结的所有修改吗？')) {
+                showMessage('已取消保存', 'info');
+                return;
+            }
+
+            try {
+                // 1. 收集采摘统计数据（只读，由系统自动生成）
+                // 注意：采摘统计数据来自"批次追溯管理"中的采摘记录，此处只读取系统计算的值
+                const harvestCount = parseInt(document.getElementById('harvest-count').value) || 0;
+                const harvestWeight = parseFloat(document.getElementById('harvest-weight').value) || 0;
+                
+                // 2. 收集农事日历数据
+                const farmCalendar = document.getElementById('farm-calendar-display').value.trim();
+                
+                // 3. 收集并解析异常事件汇总
+                const abnormalText = document.getElementById('abnormal-events-display').value.trim();
+                const abnormalSummary = [];
+                if (abnormalText) {
+                    // 简单解析：每行一个事件，格式：日期 问题，措施
+                    const lines = abnormalText.split('\n').filter(line => line.trim());
+                    lines.forEach(line => {
+                        // 尝试提取日期、问题和措施
+                        const match = line.match(/^(\S+)\s+(.+?)，(.+)$/);
+                        if (match) {
+                            abnormalSummary.push({
+                                date: match[1],
+                                issue: match[2],
+                                measures: match[3]
+                            });
+                        } else {
+                            // 如果格式不匹配，将整行作为问题
+                            abnormalSummary.push({
+                                date: '',
+                                issue: line,
+                                measures: ''
+                            });
+                        }
+                    });
+                }
+                
+                // 4. 收集气候总结数据
+                const avgTemp = document.getElementById('avg-temp-display').value.trim();
+                const totalPrecipitation = document.getElementById('total-precipitation-display').value.trim();
+                
+                // 5. 收集下月计划数据
+                const planText = document.getElementById('next-month-plan').value.trim();
+                const nextMonthPlan = planText.split('\n').filter(line => line.trim()).map(line => line.trim());
+
+                // 6. 构建完整的更新对象
+                const summaryData = {
+                    detail_gallery: topGalleryUrls, // 包含顶部影像画廊
+                    harvest_stats: {
+                        count: harvestCount,
+                        total_weight: harvestWeight
+                    },
+                    farm_calendar: farmCalendar,
+                    abnormal_summary: abnormalSummary,
+                    climate_summary: {
+                        avg_temp: avgTemp,
+                        total_precipitation: totalPrecipitation
+                    },
+                    next_month_plan: nextMonthPlan
+                };
+
+                console.log('📤 准备保存月度总结:', summaryData);
+                showMessage('正在保存所有修改...', 'info');
+                
+                // 7. 发送 PUT 请求更新数据
+                const response = await fetch(`/api/monthly-summaries/${summaryId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(summaryData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ 月度总结保存成功！所有修改已更新', 'success');
+                    console.log('✅ 月度总结已更新:', result.data);
+                    
+                    // 重新显示更新后的数据
+                    displaySummary(result.data);
+                    
+                    // 刷新列表
+                    fetchAndRenderSummaries();
+                    
+                    // 如果是编辑模式，退出编辑模式
+                    if (editingId) {
+                        document.getElementById('editing-summary-id').value = '';
+                        document.getElementById('editing-summary-banner').classList.add('hidden');
+                        currentSummaryId = result.data._id;
+                    }
+                } else {
+                    showMessage('❌ 保存失败：' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('保存月度总结时发生错误:', error);
+                showMessage('❌ 保存失败：' + error.message, 'error');
+            }
+        }
+
+        // ==================== 消息提示 ====================
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('message-container');
+            const className = type === 'success' ? 'success-message' : 
+                            type === 'error' ? 'error-message' : 'info-box';
+            container.innerHTML = `<div class="${className}">${message}</div>`;
+            if (type !== 'error') {
+                setTimeout(() => { container.innerHTML = ''; }, 5000);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
+

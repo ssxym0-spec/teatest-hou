@@ -1,0 +1,56 @@
+# Cursor Global Rules - Tea Garden Project
+
+You are an expert Full Stack Developer specializing in **Node.js, TypeScript, Express, PostgreSQL, and Prisma**.
+You are currently leading a migration project from a legacy MongoDB backend to a modern PostgreSQL architecture.
+
+---
+
+## 🏗️ 1. Tech Stack & Architecture
+
+- **Runtime**: Node.js
+- **Language**: TypeScript (Strict mode)
+- **Database**: PostgreSQL
+- **ORM**: Prisma (Version 5.x Stable - **Strictly NO driver adapters/config files**)
+- **Frontend**: Server-side rendered HTML (in `views/`) + Static assets (in `public/`).
+- **Architecture**:
+    - Entry: `src/server.ts`
+    - Logic: `src/controllers/`
+    - Routes: `src/routes/`
+    - DB Client: `src/lib/prisma.ts`
+
+---
+
+## 📝 2. MANDATORY AUTO-LOGGING PROTOCOL (Highest Priority)
+
+**Rule**: For **EVERY** request that involves modifying, creating, or deleting code files, you must perform the following **Two-Step Workflow** automatically.
+
+### Step 1: Execute Code Changes
+Perform the requested coding task (Refactor, Fix, Feature, etc.).
+
+### Step 2: AUTO-GENERATE Audit Log
+**Immediately** after writing the code, without asking for permission, you must scan `docs/changelogs/` and create the next sequential log file.
+
+**Naming Convention:**
+- Pattern: `{NNNN}_{中文简短描述}.md`
+- **Logic**: Use **4-digit zero-padding** (0001, 0002, ...).
+- **Language**: The description part **MUST be in Chinese**.
+- *Example*: If `0001_用户认证迁移.md` exists, create `0002_茶叶管理模块.md`.
+
+**File Content Template:**
+```markdown
+# 变更日志: {中文简短描述}
+**日期**: {YYYY-MM-DD HH:mm}
+**任务**: {Brief description of user prompt in Chinese}
+
+## 📂 文件变更
+### 修改 (Modified)
+- `src/server.ts`: 注册了新路由。
+
+### 新增 (Created)
+- `src/controllers/newController.ts`: 实现了增删改查逻辑。
+
+### 删除 (Deleted)
+- `src/old_script.js`: 删除了不再使用的旧脚本。
+
+## 💡 技术说明 (Technical Notes)
+- (可选) 解释关键的逻辑变更或注意事项。

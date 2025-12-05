@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模板管理中心 - 茶园管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .top-nav {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 1000;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            margin-top: 2rem;
+        }
+        
+        .header-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        
+        .header-card h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header-card p {
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .template-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .template-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .template-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+        
+        .template-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .template-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .template-title {
+            color: #333;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+        
+        .template-description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .template-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .coming-soon-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            border: 2px dashed #dee2e6;
+            opacity: 0.6;
+        }
+        
+        .coming-soon-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            display: block;
+            filter: grayscale(100%);
+        }
+        
+        .coming-soon-title {
+            color: #999;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+        
+        .coming-soon-text {
+            color: #adb5bd;
+            font-size: 0.9rem;
+        }
+        
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+        }
+        
+        .nav-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            color: #764ba2;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+                padding-top: 5rem;
+            }
+            
+            .top-nav {
+                top: 1rem;
+                left: 1rem;
+            }
+            
+            .container {
+                margin-top: 0;
+            }
+            
+            .header-card h1 {
+                font-size: 1.5rem;
+            }
+            
+            .templates-grid {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="/dashboard" class="nav-btn">🏠 返回仪表板</a>
+    </div>
+    
+    <div class="container">
+        <div class="header-card">
+            <h1>📝 模板管理中心</h1>
+            <p>统一管理系统中所有内容模板，提高工作效率</p>
+        </div>
+        
+        <div class="templates-grid">
+            <!-- 制作步骤模板 -->
+            <a href="/admin/step-templates" class="template-card" style="text-decoration: none;">
+                <span class="template-icon">🎨</span>
+                <h3 class="template-title">制作步骤模板</h3>
+                <p class="template-description">
+                    为五个制作步骤（摊晾、杀青、揉捻、干燥、分拣）设置默认文案，新增批次时自动填充
+                </p>
+                <span class="template-badge">已启用</span>
+            </a>
+            
+            <!-- 批次详情标题模板 -->
+            <a href="/admin/title-templates" class="template-card" style="text-decoration: none;">
+                <span class="template-icon">📝</span>
+                <h3 class="template-title">批次详情标题模板</h3>
+                <p class="template-description">
+                    为不同茶叶品类设置诗意的批次详情标题，创建批次时根据品类自动填充
+                </p>
+                <span class="template-badge">已启用</span>
+            </a>
+            
+            <!-- 鉴赏模板 -->
+            <a href="/admin/appreciation-templates" class="template-card" style="text-decoration: none;">
+                <span class="template-icon">☕</span>
+                <h3 class="template-title">鉴赏模板</h3>
+                <p class="template-description">
+                    为不同茶叶品类设置成品鉴赏的默认文案，包括品鉴笔记、冲泡建议和储存方法
+                </p>
+                <span class="template-badge">已启用</span>
+            </a>
+            
+            <!-- 人员管理模板 -->
+            <a href="/admin/personnel-management" class="template-card" style="text-decoration: none;">
+                <span class="template-icon">👥</span>
+                <h3 class="template-title">人员管理模板</h3>
+                <p class="template-description">
+                    统一管理记录人、采摘队长、制茶师等人员信息，其他页面可直接下拉选择
+                </p>
+                <span class="template-badge">已启用</span>
+            </a>
+            
+            <!-- 等级管理模板 -->
+            <a href="/admin/grade-management" class="template-card" style="text-decoration: none;">
+                <span class="template-icon">🏆</span>
+                <h3 class="template-title">等级管理模板</h3>
+                <p class="template-description">
+                    统一管理产品等级（等级名称、徽章图片），批次管理中可直接下拉选择
+                </p>
+                <span class="template-badge">已启用</span>
+            </a>
+            
+            <!-- 天气模板 -->
+            <a href="/admin/weather-templates" class="template-card" style="text-decoration: none;">
+                <span class="template-icon">🌤️</span>
+                <h3 class="template-title">天气模板</h3>
+                <p class="template-description">
+                    管理天气选项及对应的SVG图标，用于每日日志卡片的天气选择
+                </p>
+                <span class="template-badge">已启用</span>
+            </a>
+            
+            <!-- 未来功能：采摘记录模板 -->
+            <div class="coming-soon-card">
+                <span class="coming-soon-icon">🌿</span>
+                <h3 class="coming-soon-title">采摘记录模板</h3>
+                <p class="coming-soon-text">
+                    即将推出：快速创建标准化的采摘记录
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

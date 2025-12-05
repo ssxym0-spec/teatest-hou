@@ -1,0 +1,336 @@
+generator client {
+  provider = "prisma-client-js"
+  // 🔴 关键：确保这里没有任何 previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SettingCategory {
+  general
+  ui
+  content
+  media
+  contact
+  seo
+  social
+  footer
+}
+
+enum SettingDataType {
+  string
+  number
+  boolean
+  url
+  email
+  json
+  text
+}
+
+enum PersonnelRole {
+  RECORDER       @map("记录人")
+  HARVEST_LEAD   @map("采摘队长")
+  TEA_MASTER     @map("制茶师")
+}
+
+enum FarmActivityType {
+  NONE        @map("无")
+  FERTILIZE   @map("施肥")
+  PRUNE       @map("修剪")
+  IRRIGATE    @map("灌溉")
+  HARVEST     @map("采摘")
+  ABNORMAL    @map("异常")
+}
+
+enum BatchStatus {
+  IN_PROGRESS @map("进行中")
+  COMPLETED   @map("已完成")
+  PUBLISHED   @map("已发布")
+}
+
+enum AdoptionPlanType {
+  PRIVATE    @map("private")
+  ENTERPRISE @map("enterprise")
+  B2B        @map("b2b")
+}
+
+model User {
+  id                    String   @id @default(uuid()) @db.Uuid
+  username              String   @unique @db.VarChar(100)
+  passwordHash          String   @map("password_hash") @db.VarChar(255)
+  resetPasswordToken    String?  @map("reset_password_token") @db.VarChar(128)
+  resetPasswordExpires  DateTime? @map("reset_password_expires")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Plot {
+  id             String            @id @default(uuid()) @db.Uuid
+  name           String            @unique @db.VarChar(100)
+  carouselImages Json              @map("carousel_images") @default("[]")
+  infoList       Json              @map("info_list") @default("[]")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  growthLogs     DailyGrowthLog[]
+  monthlySummary MonthlySummary[]
+
+  @@map("plots")
+}
+
+model Setting {
+  id          String           @id @default(uuid()) @db.Uuid
+  key         String           @unique @db.VarChar(100)
+  value       String?          @db.Text
+  description String?          @db.VarChar(200)
+  category    SettingCategory  @default(general)
+  dataType    SettingDataType  @map("data_type") @default(string)
+  isPublic    Boolean          @map("is_public") @default(false)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model WeatherTemplate {
+  id               String   @id @default(uuid()) @db.Uuid
+  name             String   @unique @db.VarChar(50)
+  svgIcon          String   @map("svg_icon") @db.Text
+  temperatureRange String?  @map("temperature_range") @db.VarChar(50)
+  description      String?  @db.VarChar(200)
+  sortOrder        Int      @map("sort_order") @default(0)
+  isActive         Boolean  @map("is_active") @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("weather_templates")
+  /// 对应蓝图中的 sort_order + name 组合索引
+  @@index([sortOrder, name], map: "idx_weather_templates_sort_order_name")
+  /// 便于按是否启用过滤
+  @@index([isActive], map: "idx_weather_templates_is_active")
+  /// 最近创建/更新的天气模板
+  @@index([createdAt], map: "idx_weather_templates_created_at")
+}
+
+model TeaCategory {
+  id                String          @id @default(uuid()) @db.Uuid
+  name              String          @unique @db.VarChar(50)
+  slug              String          @unique @db.VarChar(100)
+  imageUrl          String?         @map("image_url") @db.Text
+  description       String?         @db.Text
+  yieldPercentage   Decimal         @map("yield_percentage") @default(0) @db.Decimal(5, 2)
+  pickingPeriod     String?         @map("picking_period") @db.VarChar(100)
+  pickingStartDate  DateTime?       @map("picking_start_date") @db.Date
+  pickingEndDate    DateTime?       @map("picking_end_date") @db.Date
+  sortOrder         Int             @map("sort_order") @default(999)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  harvestRecords    HarvestRecord[]
+  titleTemplate     TitleTemplate?        @relation("CategoryTitleTemplate")
+  appreciationTemplate AppreciationTemplate? @relation("CategoryAppreciationTemplate")
+
+  @@map("tea_categories")
+}
+
+model Personnel {
+  id              String        @id @default(uuid()) @db.Uuid
+  name            String        @db.VarChar(50)
+  avatarUrl       String?       @map("avatar_url")
+  role            PersonnelRole
+  experienceYears Int           @map("experience_years") @default(0)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  recordedLogs    DailyGrowthLog[] @relation("Recorder")
+  harvestTeams    HarvestRecord[]  @relation("HarvestTeam")
+  teaMasterBatches Batch[]         @relation("TeaMaster")
+
+  @@map("personnel")
+  /// 同一角色下姓名唯一，对应 Mongo 里的复合唯一索引 { role, name }
+  @@unique([role, name], name: "uq_personnel_role_name")
+}
+
+model Grade {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(50)
+  badgeUrl  String?  @map("badge_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  batches   Batch[]
+
+  @@map("grades")
+  /// 最近创建的等级优先
+  @@index([createdAt], map: "idx_grades_created_at")
+}
+
+model DailyGrowthLog {
+  id                     String            @id @default(uuid()) @db.Uuid
+  date                   DateTime          @unique @db.Date
+  plotId                 String?           @map("plot_id") @db.Uuid
+  plot                   Plot?             @relation(fields: [plotId], references: [id])
+  recorderName           String?           @map("recorder_name") @db.VarChar(100)
+  recorderId             String?           @map("recorder_id") @db.Uuid
+  recorder               Personnel?        @relation("Recorder", fields: [recorderId], references: [id])
+  mainImageUrl           String?           @map("main_image_url")
+  statusTag              Json?             @map("status_tag")
+  weather                Json?
+  summary                String?           @db.Text
+  detailGallery          Json?             @map("detail_gallery")
+  photoInfo              Json?             @map("photo_info")
+  environmentData        Json?             @map("environment_data")
+  fullLog                String?           @map("full_log") @db.Text
+  farmActivityType       FarmActivityType  @map("farm_activity_type") @default(NONE)
+  farmActivityLog        String?           @map("farm_activity_log") @db.Text
+  phenologicalObservation String?          @map("phenological_observation") @db.Text
+  abnormalEvent          Json?             @map("abnormal_event")
+  harvestWeightKg        Decimal           @map("harvest_weight_kg") @default(0) @db.Decimal(10, 2)
+  createdAt              DateTime          @default(now()) @map("created_at")
+  updatedAt              DateTime          @updatedAt @map("updated_at")
+
+  @@map("daily_growth_logs")
+}
+
+model MonthlySummary {
+  id              String   @id @default(uuid()) @db.Uuid
+  yearMonth       String   @map("year_month") @unique @db.Char(7)
+  plotId          String?  @map("plot_id") @db.Uuid
+  plot            Plot?    @relation(fields: [plotId], references: [id])
+  detailGallery   Json?    @map("detail_gallery")
+  harvestStats    Json?    @map("harvest_stats")
+  farmCalendar    String?  @map("farm_calendar") @db.Text
+  abnormalSummary Json?    @map("abnormal_summary")
+  climateSummary  Json?    @map("climate_summary")
+  nextMonthPlan   Json?    @map("next_month_plan")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("monthly_summaries")
+}
+
+model HarvestRecord {
+  id                 String    @id @default(uuid()) @db.Uuid
+  harvestDate        DateTime  @map("harvest_date") @db.Date
+  freshLeafWeightKg  Decimal   @map("fresh_leaf_weight_kg") @db.Decimal(10, 2)
+  weather            Json?
+  imagesAndVideos    Json?     @map("images_and_videos")
+  mediaUrls          Json?     @map("media_urls")
+  harvestTeam        Json?     @map("harvest_team")
+  harvestTeamId      String?   @map("harvest_team_id") @db.Uuid
+  harvestLeader      Personnel? @relation("HarvestTeam", fields: [harvestTeamId], references: [id])
+  assignedBatchId    String?   @map("assigned_batch_id") @db.Uuid
+  assignedBatch      Batch?    @relation(fields: [assignedBatchId], references: [id])
+  categoryId         String?   @map("category_id") @db.Uuid
+  category           TeaCategory? @relation(fields: [categoryId], references: [id])
+  categoryName       String?   @map("category_name") @db.VarChar(50)
+  notes              String?   @db.Text
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  batchLinks         BatchHarvestRecord[]
+
+  @@map("harvest_records")
+}
+
+model Batch {
+  id                     String    @id @default(uuid()) @db.Uuid
+  batchNumber            String    @map("batch_number") @unique @db.VarChar(50)
+  categoryName           String    @map("category_name") @db.VarChar(50)
+  teaMaster              Json?     @map("tea_master")
+  teaMasterId            String?   @map("tea_master_id") @db.Uuid
+  teaMasterRef           Personnel? @relation("TeaMaster", fields: [teaMasterId], references: [id])
+  productionSteps        Json?     @map("production_steps")
+  tastingReport          Json?     @map("tasting_report")
+  productAppreciation    Json?     @map("product_appreciation")
+  finalProductWeightKg   Decimal?  @map("final_product_weight_kg") @db.Decimal(10, 2)
+  grade                  String?   @db.VarChar(50)
+  gradeId                String?   @map("grade_id") @db.Uuid
+  gradeRef               Grade?    @relation(fields: [gradeId], references: [id])
+  productionDate         DateTime? @map("production_date") @default(now()) @db.Date
+  status                 BatchStatus
+  coverImageUrl          String?   @map("cover_image_url")
+  detailCoverImageUrl    String?   @map("detail_cover_image_url")
+  imagesAndVideos        Json?     @map("images_and_videos")
+  notes                  String?   @db.Text
+  detailTitle            String?   @map("detail_title") @db.Text
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  harvestRecords         HarvestRecord[]
+  batchHarvestRecords    BatchHarvestRecord[]
+
+  @@map("batches")
+}
+
+model BatchHarvestRecord {
+  batchId          String   @map("batch_id") @db.Uuid
+  harvestRecordId  String   @map("harvest_record_id") @db.Uuid
+  linkedAt         DateTime @map("linked_at") @default(now())
+  notes            String?  @db.Text
+  batch            Batch    @relation(fields: [batchId], references: [id])
+  harvestRecord    HarvestRecord @relation(fields: [harvestRecordId], references: [id])
+
+  @@id([batchId, harvestRecordId])
+  @@map("batch_harvest_records")
+}
+
+model ProductionStepTemplate {
+  id           String   @id @default(uuid()) @db.Uuid
+  stepName     String   @map("step_name") @unique @db.VarChar(20)
+  manualCraft  Json?    @map("manual_craft")
+  modernCraft  Json?    @map("modern_craft")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("production_step_templates")
+}
+
+model TitleTemplate {
+  id             String      @id @default(uuid()) @db.Uuid
+  categoryName   String      @map("category_name") @unique @db.VarChar(50)
+  titleTemplate  String      @map("title_template") @db.VarChar(200)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  teaCategory    TeaCategory @relation("CategoryTitleTemplate", fields: [categoryName], references: [name])
+
+  @@map("title_templates")
+  /// 便于按品类名称和创建时间排序
+  @@index([categoryName], map: "idx_title_templates_category_name")
+  @@index([createdAt], map: "idx_title_templates_created_at")
+}
+
+model AppreciationTemplate {
+  id               String      @id @default(uuid()) @db.Uuid
+  categoryName     String      @map("category_name") @unique @db.VarChar(50)
+  tastingNotes     String?     @map("tasting_notes")
+  brewingSuggestion String?    @map("brewing_suggestion")
+  storageMethod    String?     @map("storage_method")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+  teaCategory      TeaCategory @relation("CategoryAppreciationTemplate", fields: [categoryName], references: [name])
+
+  @@map("appreciation_templates")
+  /// 便于按品类名称和创建时间排序
+  @@index([categoryName], map: "idx_appreciation_templates_category_name")
+  @@index([createdAt], map: "idx_appreciation_templates_created_at")
+}
+
+model AdoptionPlan {
+  id                    String            @id @default(uuid()) @db.Uuid
+  type                  AdoptionPlanType  @unique
+  marketingHeader       Json?             @map("marketing_header")
+  valuePropositions     Json?             @map("value_propositions")
+  customerCases         Json?             @map("customer_cases")
+  scenarioApplications  Json?             @map("scenario_applications")
+  packages              Json?
+  comparisonPackageNames Json?            @map("comparison_package_names")
+  comparisonFeatures    Json?             @map("comparison_features")
+  processSteps          Json?             @map("process_steps")
+  useScenarios          Json?             @map("use_scenarios")
+  serviceContents       Json?             @map("service_contents")
+  description           String?           @db.Text
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  @@map("adoption_plans")
+}
+

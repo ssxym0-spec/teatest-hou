@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>茶园追溯 - 公开展示页面示例</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #2e7d32; text-align: center; margin-bottom: 2rem; }
+        
+        /* 人员信息卡片 */
+        .person-card {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .person-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 1rem;
+            border: 3px solid #66bb6a;
+        }
+        .person-info { flex: 1; }
+        .person-name { font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 0.3rem; }
+        .person-role { color: #666; font-size: 0.9rem; }
+        .person-experience { color: #999; font-size: 0.85rem; }
+        
+        /* 日志卡片 */
+        .log-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .log-header {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .log-date { font-size: 1.1rem; font-weight: 600; color: #2e7d32; }
+        .log-summary { margin-top: 0.5rem; color: #555; line-height: 1.6; }
+        
+        /* 批次卡片 */
+        .batch-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .batch-header {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #d84315;
+            margin-bottom: 1rem;
+        }
+        .batch-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍵 茶园追溯系统 - 公开展示页面</h1>
+        
+        <h2 style="color: #2e7d32; margin-top: 2rem; margin-bottom: 1rem;">📅 生长日志</h2>
+        <div id="growth-logs-container"></div>
+        
+        <h2 style="color: #d84315; margin-top: 3rem; margin-bottom: 1rem;">📦 制作批次</h2>
+        <div id="batches-container"></div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 工具函数：显示人员卡片
+        // ============================================================
+        function renderPersonCard(personData, defaultName = '未知') {
+            // 检查是否有 populate 后的人员数据
+            if (personData && typeof personData === 'object' && personData.name) {
+                // ✅ 有完整的人员信息（包括头像）
+                return `
+                    <div class="person-card">
+                        <img 
+                            src="${personData.avatar_url || '/default-avatar.png'}" 
+                            alt="${personData.name}"
+                            class="person-avatar"
+                            onerror="this.src='/default-avatar.png'"
+                        >
+                        <div class="person-info">
+                            <div class="person-name">${personData.name}</div>
+                            <div class="person-role">${personData.role || ''}</div>
+                            ${personData.experience_years ? `<div class="person-experience">经验：${personData.experience_years}年</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // ❌ 只有姓名（旧数据或未关联）
+                return `
+                    <div class="person-card">
+                        <img 
+                            src="/default-avatar.png" 
+                            alt="${defaultName}"
+                            class="person-avatar"
+                        >
+                        <div class="person-info">
+                            <div class="person-name">${defaultName}</div>
+                            <div class="person-role" style="color: #999;">暂无详细信息</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================================
+        // 加载生长日志
+        // ============================================================
+        async function loadGrowthLogs() {
+            const container = document.getElementById('growth-logs-container');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                // 获取当前月份
+                const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+                
+                const response = await fetch(`/api/public/growth-data?month=${currentMonth}`);
+                const result = await response.json();
+                
+                if (!result.success || !result.data || !result.data.dailyLogs) {
+                    container.innerHTML = '<div class="error-message">暂无生长日志数据</div>';
+                    return;
+                }
+                
+                const logs = result.data.dailyLogs;
+                
+                if (logs.length === 0) {
+                    container.innerHTML = '<div class="error-message">本月暂无生长日志</div>';
+                    return;
+                }
+                
+                container.innerHTML = logs.map(log => {
+                    // 格式化日期
+                    const date = new Date(log.date).toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    
+                    // ✅ 关键：使用 recorder_id（populate后的对象）来显示头像
+                    // 如果没有 recorder_id，则使用 recorder_name
+                    const recorderName = log.recorder_id?.name || log.recorder_name || '未知';
+                    
+                    return `
+                        <div class="log-card">
+                            <div class="log-header">
+                                <div class="log-date">📅 ${date}</div>
+                                <div class="log-summary">${log.summary || '暂无摘要'}</div>
+                            </div>
+                            
+                            <div class="batch-section">
+                                <div class="section-title">👤 记录人</div>
+                                ${renderPersonCard(log.recorder_id, recorderName)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('加载生长日志失败:', error);
+                container.innerHTML = '<div class="error-message">加载失败，请稍后重试</div>';
+            }
+        }
+
+        // ============================================================
+        // 加载制作批次
+        // ============================================================
+        async function loadBatches() {
+            const container = document.getElementById('batches-container');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const response = await fetch('/api/public/batches');
+                const result = await response.json();
+                
+                if (!result.success || !result.data) {
+                    container.innerHTML = '<div class="error-message">暂无批次数据</div>';
+                    return;
+                }
+                
+                const batches = result.data;
+                
+                if (batches.length === 0) {
+                    container.innerHTML = '<div class="error-message">暂无已发布的批次</div>';
+                    return;
+                }
+                
+                container.innerHTML = batches.map(batch => {
+                    // ✅ 关键：使用 tea_master_id（populate后的对象）来显示头像
+                    const teaMasterName = batch.tea_master_id?.name || batch.tea_master?.name || '未知';
+                    
+                    return `
+                        <div class="batch-card">
+                            <div class="batch-header">📦 ${batch.batch_number || '未知批次'}</div>
+                            <div><strong>品类：</strong>${batch.category_name || '未知'}</div>
+                            
+                            <div class="batch-section">
+                                <div class="section-title">👨‍🍳 制茶师</div>
+                                ${renderPersonCard(batch.tea_master_id, teaMasterName)}
+                            </div>
+                            
+                            <button onclick="viewBatchDetail('${batch._id}')" 
+                                    style="margin-top: 1rem; padding: 0.5rem 1rem; background: #d84315; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                查看详情
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('加载批次失败:', error);
+                container.innerHTML = '<div class="error-message">加载失败，请稍后重试</div>';
+            }
+        }
+
+        // ============================================================
+        // 查看批次详情
+        // ============================================================
+        async function viewBatchDetail(batchId) {
+            try {
+                const response = await fetch(`/api/public/batches/${batchId}`);
+                const result = await response.json();
+                
+                if (!result.success || !result.data) {
+                    alert('加载批次详情失败');
+                    return;
+                }
+                
+                const batch = result.data;
+                
+                // 构建详情HTML
+                let detailHTML = `
+                    <h2>批次详情：${batch.batch_number}</h2>
+                    <p><strong>品类：</strong>${batch.category_name}</p>
+                    <hr style="margin: 1rem 0;">
+                `;
+                
+                // ✅ 制茶师信息
+                if (batch.tea_master_id) {
+                    detailHTML += `
+                        <h3>👨‍🍳 制茶师</h3>
+                        ${renderPersonCard(batch.tea_master_id, batch.tea_master?.name)}
+                        <hr style="margin: 1rem 0;">
+                    `;
+                }
+                
+                // ✅ 采摘记录（含采摘队长）
+                if (batch.harvest_records_ids && batch.harvest_records_ids.length > 0) {
+                    detailHTML += '<h3>🌿 采摘记录</h3>';
+                    batch.harvest_records_ids.forEach((record, index) => {
+                        const harvestDate = new Date(record.harvest_date).toLocaleDateString('zh-CN');
+                        const teamLeaderName = record.harvest_team_id?.name || record.harvest_team?.leader_name || '未知';
+                        
+                        detailHTML += `
+                            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f5f5f5; border-radius: 5px;">
+                                <p><strong>采摘日期：</strong>${harvestDate}</p>
+                                <p><strong>鲜叶重量：</strong>${record.fresh_leaf_weight_kg || 0} kg</p>
+                                <div style="margin-top: 1rem;">
+                                    <strong>👥 采摘队长</strong>
+                                    ${renderPersonCard(record.harvest_team_id, teamLeaderName)}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                // 显示在弹窗或新页面
+                const detailWindow = window.open('', '_blank', 'width=800,height=600');
+                detailWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>批次详情</title>
+                        <style>
+                            body { font-family: Arial; padding: 2rem; }
+                            .person-card { display: flex; align-items: center; background: white; border-radius: 10px; padding: 1rem; margin: 0.5rem 0; border: 1px solid #ddd; }
+                            .person-avatar { width: 50px; height: 50px; border-radius: 50%; margin-right: 1rem; border: 2px solid #66bb6a; }
+                            .person-info { flex: 1; }
+                            .person-name { font-weight: 600; }
+                            .person-role { color: #666; font-size: 0.9rem; }
+                        </style>
+                    </head>
+                    <body>
+                        ${detailHTML}
+                    </body>
+                    </html>
+                `);
+                
+            } catch (error) {
+                console.error('加载批次详情失败:', error);
+                alert('加载失败');
+            }
+        }
+
+        // ============================================================
+        // 页面加载时执行
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGrowthLogs();
+            loadBatches();
+        });
+    </script>
+</body>
+</html>
+
