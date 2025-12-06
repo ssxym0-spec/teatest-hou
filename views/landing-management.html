@@ -1510,6 +1510,7 @@
         let currentSelectedPlotId = '';
         let currentCarouselImages = [];
         let currentInfoItems = [];
+        let currentReplaceImageIndex = null; // 用于标记当前要替换的图片索引
 
         // 品类管理
         let currentCategories = [];
@@ -1760,6 +1761,7 @@
         }
 
         function addNewCarouselImage() {
+            currentReplaceImageIndex = null; // 确保是添加模式
             document.getElementById('plot-file-input').click();
         }
 
@@ -1768,13 +1770,8 @@
         }
 
         function replaceCarouselImage(index) {
+            currentReplaceImageIndex = index;
             const fileInput = document.getElementById('plot-file-input');
-            fileInput.onchange = function(e) {
-                if (e.target.files.length > 0) {
-                    uploadPlotImage(e.target.files[0], index);
-                }
-                fileInput.onchange = null;
-            };
             fileInput.click();
         }
 
@@ -2571,8 +2568,15 @@
         function initFileInputs() {
             // 地块图片
             document.getElementById('plot-file-input').addEventListener('change', function(e) {
-                if (e.target.files.length > 0 && !this.onchange) {
-                    uploadPlotImage(e.target.files[0]);
+                if (e.target.files.length > 0) {
+                    if (currentReplaceImageIndex !== null) {
+                        // 替换模式
+                        uploadPlotImage(e.target.files[0], currentReplaceImageIndex);
+                        currentReplaceImageIndex = null;
+                    } else {
+                        // 添加模式
+                        uploadPlotImage(e.target.files[0]);
+                    }
                 }
                 e.target.value = '';
             });
