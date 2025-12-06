@@ -129,4 +129,83 @@ export async function register(req: Request, res: Response) {
   }
 }
 
+/**
+ * 处理修改密码请求
+ * - 验证用户已登录
+ * - 校验当前密码是否正确
+ * - 校验新密码格式和确认密码一致性
+ * - 更新密码并销毁会话，要求用户重新登录
+ */
+export async function changePassword(req: Request, res: Response) {
+  try {
+    // 检查用户是否已登录
+    if (!req.session.user || !req.session.user.id) {
+      return res.redirect('/login?error=login-required');
+    }
+
+    const { oldPassword, newPassword, confirmPassword } = req.body ?? {};
+
+    // 验证必填字段
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      return res.redirect('/change-password?error=missing-fields');
+    }
+
+    // 验证新密码长度
+    if (newPassword.length < 6) {
+      return res.redirect('/change-password?error=password-too-short');
+    }
+
+    // 验证新密码和确认密码是否一致
+    if (newPassword !== confirmPassword) {
+      return res.redirect('/change-password?error=password-mismatch');
+    }
+
+    // 获取当前用户信息
+    const user = await prisma.user.findUnique({
+      where: { id: req.session.user.id },
+    });
+
+    if (!user) {
+      return res.redirect('/change-password?error=user-not-found');
+    }
+
+    // 验证当前密码
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isOldPasswordValid) {
+      return res.redirect('/change-password?error=invalid-old-password');
+    }
+
+    // 检查新旧密码是否相同
+    const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash);
+    if (isSamePassword) {
+      return res.redirect('/change-password?error=same-password');
+    }
+
+    // 加密新密码
+    const saltRounds = 10;
+    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    // 更新密码
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    // 销毁会话，要求用户重新登录
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('销毁会话时发生错误:', err);
+        return res.redirect('/change-password?error=session-destroy-failed');
+      }
+
+      console.log(`✅ 用户 ${user.username} 密码修改成功`);
+      // 重定向到登录页面，显示成功消息
+      res.redirect('/login?message=password-changed-success');
+    });
+  } catch (error) {
+    console.error('修改密码处理过程中发生错误:', error);
+    return res.redirect('/change-password?error=server-error');
+  }
+}
+
 

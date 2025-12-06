@@ -17,6 +17,7 @@ import growthRoutes from './routes/growthRoutes';
 import summaryRoutes from './routes/summaryRoutes';
 import publicRoutes from './routes/publicRoutes';
 import { requireLogin } from './middleware/auth';
+import { changePassword } from './controllers/authController';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -61,6 +62,11 @@ app.get('/', (_req, res) => {
   res.sendFile(path.join(VIEWS_DIR, 'login.html'));
 });
 
+// 登录页面路由
+app.get('/login', (_req, res) => {
+  res.sendFile(path.join(VIEWS_DIR, 'login.html'));
+});
+
 // Dashboard 路由处理
 app.get('/dashboard', (_req, res) => {
   res.sendFile(path.join(VIEWS_DIR, 'dashboard.html'));
@@ -69,6 +75,14 @@ app.get('/dashboard', (_req, res) => {
 app.get('/admin', (_req, res) => {
   res.sendFile(path.join(VIEWS_DIR, 'dashboard.html'));
 });
+
+// 修改密码页面路由
+app.get('/change-password', requireLogin, (_req, res) => {
+  res.sendFile(path.join(VIEWS_DIR, 'change-password.html'));
+});
+
+// 修改密码提交路由
+app.post('/change-password', requireLogin, changePassword);
 
 // 模板管理中心（索引页）：固定路由，避免被通配 /admin/:page 误导向详情页
 app.get('/admin/template-management', requireLogin, (_req, res) => {
