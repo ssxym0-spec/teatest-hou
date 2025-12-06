@@ -73,10 +73,8 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(
-      new Error('只允许上传图片文件 (JPEG, PNG, GIF, WebP, AVIF, SVG) 或视频文件 (MP4, WebM, OGG, MOV)'),
-      false,
-    );
+    const error = new Error('只允许上传图片文件 (JPEG, PNG, GIF, WebP, AVIF, SVG) 或视频文件 (MP4, WebM, OGG, MOV)');
+    cb(error as any, false);
   }
 };
 
