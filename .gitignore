@@ -3,3 +3,37 @@ node_modules
 dist
 .DS_Store
 docs/
+
+# 上传文件和媒体资源
+# 忽略上传目录中的内容，但保留目录结构
+public/uploads/**
+!public/uploads/.gitkeep
+public/uploads/*/
+!public/uploads/*/.gitkeep
+
+# 忽略常见的媒体文件格式（无论位置）
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.avif
+*.svg
+*.bmp
+*.ico
+*.tiff
+*.tif
+*.mp4
+*.webm
+*.ogg
+*.mov
+*.avi
+*.wmv
+*.flv
+*.mkv
+*.mp3
+*.wav
+*.flac
+*.aac
+*.m4a
+*.wma

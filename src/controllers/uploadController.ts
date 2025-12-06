@@ -147,7 +147,20 @@ export async function uploadImage(req: Request, res: Response) {
     const validCategory = uploadCategories[category as keyof typeof uploadCategories] || uploadCategories.misc;
 
     const imageUrl = `/uploads/${validCategory}/${req.file.filename}`;
-    const PORT = Number(process.env.PORT) || 3000;
+    
+    // 生成完整URL：优先使用环境变量，否则从请求头获取
+    let fullUrl: string;
+    if (process.env.BASE_URL) {
+      // 使用环境变量中的基础URL（去除末尾斜杠）
+      fullUrl = `${process.env.BASE_URL.replace(/\/$/, '')}${imageUrl}`;
+    } else {
+      // 自动推断：从请求头动态拼接
+      // 协议：优先读取 x-forwarded-proto（兼容 Nginx 反向代理），否则使用 req.protocol
+      const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
+      // 主机：使用 req.get('host')
+      const host = req.get('host') || `localhost:${process.env.PORT || 3000}`;
+      fullUrl = `${protocol}://${host}${imageUrl}`;
+    }
 
     console.log(`✅ 图片上传成功: ${validCategory}/${req.file.filename}`);
 
@@ -160,7 +173,7 @@ export async function uploadImage(req: Request, res: Response) {
         size: req.file.size,
         mimetype: req.file.mimetype,
         url: imageUrl,
-        fullUrl: `http://localhost:${PORT}${imageUrl}`,
+        fullUrl: fullUrl,
         category: validCategory,
       },
     });
