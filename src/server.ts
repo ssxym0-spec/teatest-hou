@@ -23,9 +23,17 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'your-secret-key-change-in-production';
 
+// CORS 配置：优先从环境变量读取，否则使用默认值
+const frontendUrl = process.env.FRONTEND_URL || 'https://tea.goodcat.ggff.net';
+const corsOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  frontendUrl,
+];
+
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: corsOrigins,
     credentials: true,
   }),
 );
